@@ -74,3 +74,7 @@ Both local databases are already migrated and both APIs are healthy. No install/
 ## Subsequent demo publication instruction
 
 After this review the user explicitly requested committing/pushing the demo version of the work completed so far to ootla-v1-demo, then reaffirmed that the demo branch is the target. The live checkout remains uncommitted. This source publication does not copy private databases/environments, deploy the hosted application, change account activation or authorize customer email. Publication outcome is reported in the task handover.
+
+## Reaffirmed live-branch follow-through - 2026-10-31
+
+The subsequent user prompt explicitly reaffirmed carrying all demo features to the live branch and requested an EliseAI/DashQ gap audit. The already replicated shared source is now recorded on the local ootla-v1-branch. This supersedes the earlier statement that the live source was still uncommitted. Demo baseline3452d66 was already pushed. Private/runtime/data boundaries remain unchanged; no hosted deployment, live provider activation or customer email occurred. See [the sourced competitor comparison](ootla-competitive-audit.md) and the latest progress entry for current checks; new competitive gaps are recorded for later prompts rather than implemented automatically.
