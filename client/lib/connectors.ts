@@ -53,7 +53,7 @@ export function initializeConnectorWorkspace(signal: AbortSignal, navigate: (pat
     else if (action === 'reconnect') endpoint += '/reconnect';
     else if (action === 'scenario') { endpoint += '/demo-actions'; body.action = String(data.get('action') ?? ''); if (body.action === 'availability_update') body.status = String(data.get('status') ?? 'available'); saved = String(body.action); }
     else if (action === 'resolve') { endpoint += '/conflicts/' + encodeURIComponent(form.dataset.conflictId!) + '/resolve'; body.resolution = String(data.get('resolution') ?? ''); destination = 'conflicts'; }
-    else throw new Error('This connection action is unavailable.');
+    else throw new Error('This connection action is not ready.');
    }
    const inputKey = JSON.stringify({ endpoint, ...body, requestKey: undefined });
    if (form.dataset.requestInput && form.dataset.requestInput !== inputKey) body.requestKey = form.dataset.requestKey = crypto.randomUUID();

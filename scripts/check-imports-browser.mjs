@@ -99,7 +99,7 @@ try {
   await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'password');
   await expect(page.getByLabel('Email address', { exact: true })).toHaveValue('standalone@demo.ootla.test');
   assert.equal(mutations.length, 0, 'Filling demo credentials never authenticates.');
-  await page.getByRole('button', { name: /Sign in to your workspace/ }).click();
+  await page.getByRole('button', { name: /Sign in/ }).click();
   await expect(workspace()).toBeVisible(); signedIn = true;
   const onboarding = await read('/api/imports/onboarding'), user = (await read('/api/auth/me')).user;
   assert.equal(onboarding.organization.mode, 'standalone'); assert.equal(onboarding.canImport, true);
@@ -173,7 +173,7 @@ try {
     detail = await finish(leadBatch); assert.equal(detail.batch.counts.created, 1);
     const leads = await read('/api/leads?pageSize=100'); assert.equal(leads.total, 1);
     const lead = leads.items[0]; assert.equal(lead.contactId, taylor.id); assert.equal(lead.propertyId, relatedProperty.id); assert.equal(lead.stage, 'new_inquiry');
-    phase = 'crm'; await page.goto(url('/admin/leads?lead=' + lead.id));
+    phase = 'crm'; await page.goto(url('/admin/leads?view=record&lead=' + lead.id));
     await expect(page.locator('[data-lead-workspace]')).toBeVisible();
     const contactAfter = await read('/api/property-foundation/contacts/' + taylor.id); assert(contactAfter.history.items.some(item => item.kind === 'lead'));
     pass('imported leads share canonical contact, property and unit relationships and use the existing lead/application CRM foundation');
@@ -225,10 +225,10 @@ try {
   await page.setViewportSize({ width: 1586, height: 1050 });
   pass('320/390/768/1586 responsive import and result views, native labels, keyboard controls and reduced-motion usability');
 
-  phase = 'other'; await page.goto(url('/admin/integrations')); await expect(page.locator('.admin-app')).toBeVisible();
+  phase = 'other'; await page.goto(url('/admin/integrations')); await expect(page.locator('[data-staff-shell]')).toBeVisible();
   await page.getByRole('link', { name: 'Open customer-data import', exact: true }).click(); await expect(workspace()).toBeVisible();
-  phase = 'overview'; await page.goto(url('/admin')); await expect(page.locator('.admin-app')).toBeVisible();
-  assert.equal(await page.locator('.summary-metric').count(), 4); assert((await page.locator('.followup-card').count()) <= 3);
+  phase = 'overview'; await page.goto(url('/admin')); await expect(page.locator('[data-staff-shell]')).toBeVisible();
+  assert.equal(await page.locator('.b-summary .b-stat').count(), 4); await expect(page.locator('[data-pipeline]')).toBeVisible();
   await page.getByRole('button', { name: 'Account menu', exact: true }).click(); await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/login/); signedIn = false;
   assert.equal((await page.request.get(url('/api/imports/onboarding'))).status(), 401);

@@ -1,0 +1,6 @@
+import {z} from 'zod';
+export const chatRequestSchema=z.object({requestKey:z.uuid(),leadId:z.uuid().nullable().default(null),question:z.string().trim().min(3).max(1000),draftBody:z.string().trim().min(1).max(4000).optional()}).strict().refine(v=>!v.draftBody||Boolean(v.leadId));
+export const chatDecisionSchema=z.object({operation:z.enum(['approve','edit','skip']),version:z.number().int().positive(),confirmed:z.boolean().optional(),body:z.string().trim().min(1).max(4000).optional(),title:z.string().trim().min(1).max(300).optional(),dueAt:z.iso.datetime({offset:true}).optional(),channel:z.enum(['email','sms']).optional(),subject:z.string().trim().max(200).optional()}).strict().refine(v=>v.operation!=='approve'||v.confirmed===true);
+export interface ChatCard {kind:'lead'|'tour'|'task'|'property';id:string;title:string;subtitle:string;href:string;leadId:string|null;propertyId:string}
+export interface ChatProposal {kind:'draft'|'task';body:string;title:string;dueAt:string;channel:'email'|'sms';subject:string}
+export interface ChatEntry {id:string;leadId:string|null;question:string;answer:string;cards:ChatCard[];proposal:ChatProposal|null;decision:'pending'|'approved'|'skipped'|null;version:number;createdAt:string;resultUrl:string|null;mode:'records'|'demo'|'live'}

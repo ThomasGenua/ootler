@@ -1,4 +1,5 @@
 import type { PoolClient } from 'pg';
+import {activityFeed} from './activity-feed.js';
 import type { z } from 'zod';
 import type { AuthUser, Permission } from '../../shared/contracts.js';
 import type { Row, bulkAssignmentSchema, savedViewSchema, formSchema, ruleSchema, knowledgeSchema, templateSchema } from '../../shared/operations-contracts.js';
@@ -20,6 +21,7 @@ export class Operations {
   return{properties,propertyPage:page,propertyTotal:properties[0]?.total??0,canConfigure:a.organization.role==='organization_admin'};
  });}
  async list(user:AuthUser,digest:string,kind:'forms'|'rules'|'knowledge'|'templates'|'activity'|'runs'|'saved-views',q:string,page:number){return this.staff(user,digest,async(c,a)=>{
+  if(kind==='activity')return activityFeed(c,a,q,page);
   const config={forms:{table:'intake_forms',filter:propertyScope('r'),search:'r.title',order:'r.created_at DESC,r.id'},rules:{table:'followup_rules',filter:propertyScope('r'),search:'r.name',order:'r.created_at DESC,r.id'},knowledge:{table:'property_knowledge',filter:propertyScope('r'),search:'r.title',order:'r.updated_at DESC,r.id'},templates:{table:'communication_templates',filter:'r.organization_id=$1 AND ($2::text IS NOT NULL) AND ($3::uuid IS NOT NULL)',search:'r.name',order:'r.updated_at DESC,r.id'},activity:{table:'operation_events',filter:leadScope('r'),search:"r.summary||' '||r.kind",order:'r.created_at DESC,r.id DESC'},runs:{table:'followup_runs',filter:`r.organization_id=$1 AND EXISTS(SELECT 1 FROM leads l WHERE l.id=r.lead_id AND ${actualLeadScope('l')})`,search:'r.reason',order:'r.created_at DESC,r.id'},'saved-views':{table:'saved_lead_views',filter:'r.organization_id=$1 AND r.user_id=$6 AND $2::text IS NOT NULL AND $3::uuid IS NOT NULL',search:'r.name',order:'r.created_at DESC,r.id'}}[kind];
   if(kind==='forms'||kind==='rules')requireAdmin(a);
   const args=[...scopeArgs(a),q,(page-1)*25,...(kind==='saved-views'?[a.id]:[])];
@@ -71,6 +73,7 @@ export class Operations {
    UNION ALL SELECT p.id,'property',p.name,'/admin/properties?property='||p.id FROM properties p WHERE p.organization_id=$1 AND ($2='organization_admin' OR EXISTS(SELECT 1 FROM property_access_assignments pa WHERE pa.organization_id=p.organization_id AND pa.property_id=p.id AND pa.membership_id=$3)) AND strpos(lower(p.name),lower($4))>0
    UNION ALL SELECT a.id,'application',co.display_name,'/admin/applications?application='||a.id FROM applications a JOIN contacts co ON co.id=a.contact_id WHERE ${leadScope('a')} AND strpos(lower(co.display_name),lower($4))>0
    UNION ALL SELECT co.id,'contact',co.display_name,'/admin/contacts?contact='||co.id FROM contacts co WHERE co.organization_id=$1 AND ($2='organization_admin' OR EXISTS(SELECT 1 FROM contact_property_links cp WHERE cp.contact_id=co.id AND ${propertyScope('cp')}) AND NOT EXISTS(SELECT 1 FROM contact_property_links cp WHERE cp.contact_id=co.id AND NOT (${propertyScope('cp')}))) AND strpos(lower(co.display_name||' '||co.email),lower($4))>0
+   UNION ALL SELECT v.id,'tour',co.display_name||' · '||p.name,'/admin/calendar?viewing='||v.id FROM viewings v JOIN contacts co ON co.id=(SELECT contact_id FROM leads WHERE id=v.lead_id AND organization_id=v.organization_id) JOIN properties p ON p.id=v.property_id AND p.organization_id=v.organization_id WHERE ${leadScope('v')} AND strpos(lower(co.display_name||' '||p.name),lower($4))>0
    UNION ALL SELECT t.id,'task',t.title,'/admin/tasks?task='||t.id FROM tasks t WHERE ${leadScope('t')} AND strpos(lower(t.title),lower($4))>0
   ) SELECT *,count(*) OVER()::int AS total FROM results ORDER BY kind,lower(title),id LIMIT 25 OFFSET $5`,[...scopeArgs(a),q,(page-1)*25])).rows;
   return{items,page,total:items[0]?.total??0,pageSize:25};

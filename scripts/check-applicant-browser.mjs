@@ -32,8 +32,8 @@ async function staffSignIn(){
  await staff.goto(url('/admin/login?returnTo=%2Fadmin%2Fapplications'));
  await staff.getByLabel('Email address',{exact:true}).fill(fixture.staffEmail);
  await staff.getByLabel('Password',{exact:true}).fill(fixture.staffPassword);
- await expect(staff.getByRole('button',{name:/Sign in to your workspace/})).toBeEnabled();
- await staff.getByRole('button',{name:/Sign in to your workspace/}).click();
+ await expect(staff.getByRole('button',{name:/Sign in/})).toBeEnabled();
+ await staff.getByRole('button',{name:/Sign in/}).click();
  await expect(staff.locator('[data-applications-workspace]')).toBeVisible();
 }
 try{
@@ -110,7 +110,7 @@ try{
  await expect(staff.locator('.ap-preview-banner')).toContainText('Read-only staff preview');
  assert.equal(await staff.locator('[data-applicant-form] button[type=submit]').count(),0);
  assert.equal(await staff.locator('[data-applicant-workspace] input:not(:disabled)').count(),0);
- await go(staff,'/admin/leads?lead='+savedStaff.application.leadId,'[data-lead-workspace08]');
+ await go(staff,'/admin/leads?view=record&lead='+savedStaff.application.leadId,'[data-lead-workspace08]');
  const lead=await read(staff,'/api/lead-workspaces/'+savedStaff.application.leadId);
  assert.equal(lead.leadDetail.lead.applicationSummary.status,'submitted');
  assert(lead.timeline.items.some(event=>event.kind==='application'&&/submitted.*staff review/i.test(event.summary)));

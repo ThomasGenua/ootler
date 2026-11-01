@@ -33,7 +33,7 @@ async function paymentAction(page,action,button){
  const old=await page.locator('[data-payment-workspace]').elementHandle();await page.locator('[data-payment-action='+action+']').getByRole('button',{name:button,exact:true}).click();await old.waitForElementState('hidden');await expect(page.locator('[data-payment-workspace] [data-payment-success]')).toBeVisible();
 }
 try{
- await go(staff,'/admin/login','#login-form');await staff.getByLabel('Email address',{exact:true}).fill(fixture.staffEmail);await staff.getByLabel('Password',{exact:true}).fill(fixture.staffPassword);await expect(staff.getByRole('button',{name:/Sign in to your workspace/})).toBeEnabled();await staff.getByRole('button',{name:/Sign in to your workspace/}).click();await expect(staff).toHaveURL(url('/admin'));
+ await go(staff,'/admin/login','#login-form');await staff.getByLabel('Email address',{exact:true}).fill(fixture.staffEmail);await staff.getByLabel('Password',{exact:true}).fill(fixture.staffPassword);await expect(staff.getByRole('button',{name:/Sign in/})).toBeEnabled();await staff.getByRole('button',{name:/Sign in/}).click();await expect(staff).toHaveURL(url('/admin'));
  await go(staff,staffPath,'[data-payment-workspace]');
  const initial=await read(staff,staffApi);assert.equal(initial.mode,'demo');assert.equal(initial.status,'unknown');assert.equal(initial.verifiedAt,null);
  await staff.getByText('Approved payment destinations',{exact:true}).click();

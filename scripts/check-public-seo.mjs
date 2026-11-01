@@ -88,9 +88,9 @@ try {
  await page.goBack();await expect(page).toHaveTitle(site.publicPages['/'].title);
  assert.deepEqual(publicApi,[]);
  publicPhase=false;await page.locator('#public-navigation a.public-sign-in').click();await expect(page).toHaveURL(base+'/admin/login');await expect(page.locator('head script[type="application/ld+json"]')).toHaveCount(0);await expect(page.locator('head link[rel="canonical"]')).toHaveCount(0);await expect(page.locator('head meta[name="robots"]')).toHaveAttribute('content','noindex, nofollow');await expect(page).toHaveTitle(/Staff sign in/);
- await page.getByRole('button',{name:'Fill demo credentials',exact:true}).click();await expect(page.locator('#login-password')).toHaveAttribute('type','password');await page.locator('#login-submit').click();await expect(page).toHaveURL(base+'/admin');await expect(page.locator('.summary-metric')).toHaveCount(4);
- assert.deepEqual(await page.locator('.admin-header-actions>button').evaluateAll(es=>es.map(e=>e.dataset.action)),['lead-search','notifications','header-summary','account-menu']);
- await page.locator('[data-action="account-menu"]').click();await expect(page.locator('#account-menu>strong')).toHaveText('Demo Administrator');await page.locator('#account-menu [data-action="logout"]').click();await expect(page).toHaveURL(base+'/admin/login');
+ await page.getByRole('button',{name:'Fill demo credentials',exact:true}).click();await expect(page.locator('#login-password')).toHaveAttribute('type','password');await page.locator('#login-submit').click();await expect(page).toHaveURL(base+'/admin');await expect(page.locator('[data-staff-shell]')).toBeVisible();
+ await expect(page.locator('[data-shell=command]')).toBeVisible();await expect(page.locator('#b-ask')).toBeVisible();
+ await page.locator('[data-shell="account"]').click();await expect(page.locator('#b-account>strong')).toHaveText('Demo Administrator');await page.locator('#b-account [data-action="logout"]').click();await expect(page).toHaveURL(base+'/admin/login');
  assert.deepEqual(errors,[]);assert.deepEqual(external,[]);
  for(const route of ['/not-a-real-page','/not-a-real-page.html'])assert.equal((await get(base+route)).status,404);
  console.log('PASS 3: no-JavaScript/production-CSP public rendering, diagonal smaller-photo hierarchy at five widths, hover/focus/Escape credits and removed global skip anchor, SPA metadata/back navigation, no public API calls and preserved normal demo login/header/logout.');

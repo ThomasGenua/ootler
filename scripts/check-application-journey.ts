@@ -491,11 +491,13 @@ async function checkAi(c:Context){
  phase='release readiness and request correlation';
  assert.equal((await api.request('/api/live')).status,200);
  const ready=await api.request('/api/ready');assert.equal(ready.status,200);assert.match(ready.headers.get('x-request-id')??'',/^[a-f0-9-]{36}$/);
- await database.query("DELETE FROM schema_migrations WHERE name='017_pilot_features.sql'");
- assert.equal((await api.request('/api/ready')).status,503);
- const migration=await readFile(path.join(root,'migrations/017_pilot_features.sql'),'utf8');
- await database.query('INSERT INTO schema_migrations(name,checksum) VALUES($1,$2)',['017_pilot_features.sql',createHash('sha256').update(migration).digest('hex')]);
- assert.equal((await api.request('/api/ready')).status,200);
+ for(const name of ['017_pilot_features.sql','023_staff_assistant_chat.sql']){
+  await database.query('DELETE FROM schema_migrations WHERE name=$1',[name]);
+  assert.equal((await api.request('/api/ready')).status,503);
+  const migration=await readFile(path.join(root,'migrations',name),'utf8');
+  await database.query('INSERT INTO schema_migrations(name,checksum) VALUES($1,$2)',[name,createHash('sha256').update(migration).digest('hex')]);
+  assert.equal((await api.request('/api/ready')).status,200);
+ }
  phase='assistant permissions, quota, replay and review';
  const route='/api/pilot/assistant',body={leadId:leadIds[0],requestKey:randomUUID(),action:'follow_up'};
  for(const cookie of ['',applicant,analyst])await deny(api,route,cookie,'POST',body,[401,403]);

@@ -30,16 +30,16 @@ async function action(kind){assert(mutate);const form=workspace().locator('[data
 async function scenario(kind,status){await go();await workspace().getByLabel('Simulation',{exact:true}).selectOption(kind);if(status)await workspace().getByLabel('Simulated unit availability',{exact:true}).selectOption(status);return action('scenario');}
 async function sync(mode='sync'){await go();const result=await action(mode);await waitJob(result.job.id);await go('jobs');return result.job.id;}
 async function labels(){const missing=await workspace().evaluate(root=>[...root.querySelectorAll('input,select,textarea')].filter(control=>control.type!=='hidden'&&!control.labels?.length&&!control.getAttribute('aria-label')).map(control=>control.name));assert.deepEqual(missing,[]);}
-async function signIn(target,email,password){await target.goto(url('/admin/login?returnTo=%2Fadmin%2Fintegrations'));await target.getByLabel('Email address',{exact:true}).fill(email);await target.getByLabel('Password',{exact:true}).fill(password);await expect(target.getByRole('button',{name:/Sign in to your workspace/})).toBeEnabled();await target.getByRole('button',{name:/Sign in to your workspace/}).click();await expect(target.locator('[data-connector-workspace]')).toBeVisible();}
+async function signIn(target,email,password){await target.goto(url('/admin/login?returnTo=%2Fadmin%2Fintegrations'));await target.getByLabel('Email address',{exact:true}).fill(email);await target.getByLabel('Password',{exact:true}).fill(password);await expect(target.getByRole('button',{name:/Sign in/})).toBeEnabled();await target.getByRole('button',{name:/Sign in/}).click();await expect(target.locator('[data-connector-workspace]')).toBeVisible();}
 try{
  await page.goto(url('/admin/integrations'));
  await expect(page).toHaveURL(/\/admin\/login\?returnTo=/);
  await page.getByRole('button',{name:'Fill demo credentials',exact:true}).click();assert.equal(writes.length,0);
- await page.getByRole('button',{name:/Sign in to your workspace/}).click();await expect(workspace()).toBeVisible();
+ await page.getByRole('button',{name:/Sign in/}).click();await expect(workspace()).toBeVisible();
  const initial=await overview();connectionId=initial.connection?.id??'';
  if(mutate){assert.equal(initial.connection,null);await expect(workspace()).toHaveAttribute('data-connector-state','not_configured');}
  assert.equal(initial.access.liveAvailable,false);
- await expect(workspace().getByRole('heading',{name:'Live Yardi connection: not configured',exact:true})).toBeVisible();
+ await expect(workspace().getByRole('heading',{name:'Live Yardi connection: not connected',exact:true})).toBeVisible();
  for(const state of ['Not configured','Demo','Connecting','Live','Degraded','Disconnected'])await expect(workspace().locator('.cn-states .cn-tag').filter({hasText:new RegExp('^'+state+'$')})).toBeVisible();
  await expect(workspace().getByRole('link',{name:'Open customer-data import',exact:true})).toHaveAttribute('href','/admin/imports');
  await expect(workspace().locator('input[type=password],textarea[name=secret],input[name=secret]')).toHaveCount(0);
@@ -65,7 +65,7 @@ try{
   const first=await workspace().locator('[data-connector-mapping]').getAttribute('data-connector-mapping');
   await workspace().getByRole('link',{name:'Next',exact:true}).click();await expect(page).toHaveURL(/page=2/);
   const second=await workspace().locator('[data-connector-mapping]').getAttribute('data-connector-mapping');assert.notEqual(first,second);
-  for(const mapping of mappings.items){await page.goto(url(mapping.relatedUrl));await expect(page.locator('.admin-app')).toBeVisible();await expect(page.locator('.workspace-content')).not.toContainText('Your workspace needs a moment');}
+  for(const mapping of mappings.items){await page.goto(url(mapping.relatedUrl));await expect(page.locator('[data-staff-shell]')).toBeVisible();await expect(page.locator('.b-main')).not.toContainText('Your workspace needs a moment');}
   await go('mappings');await workspace().getByRole('link',{name:'Event history',exact:true}).focus();await page.keyboard.press('Enter');await expect(page).toHaveURL(/view=events/);await labels();
   pass('server-paginated mappings, separate result pages, real CRM destinations and native keyboard navigation');
   if(!layoutOnly){
@@ -143,7 +143,7 @@ try{
  const after=await overview();assert.deepEqual(after.summary,before.summary);assert.deepEqual(after.connection,before.connection);assert.equal(writes.length,count,'Refresh does not post, queue, connect or create records.');
  if(!mutate)assert.equal(writes.filter(item=>item.includes('/api/connectors')).length,0,'Retained checks perform no connector mutations.');
  await Promise.all(pending);assert.deepEqual(errors,[]);assert.deepEqual(external,[]);assert.deepEqual(unbounded,[]);assert.deepEqual(legacy,[]);
- await page.getByRole('button',{name:'Account menu',exact:true}).click();await page.locator('#account-menu').getByRole('button',{name:'Sign out',exact:true}).click();await expect(page).toHaveURL(/\/admin\/login/);
+ await page.getByRole('button',{name:'Account menu',exact:true}).click();await page.locator('#b-account').getByRole('button',{name:'Sign out',exact:true}).click();await expect(page).toHaveURL(/\/admin\/login/);
  pass('refresh/reload are read-only, all responses are bounded, normal sign-out works and no external actions or browser errors occur');
  console.log('Connector browser checks passed: '+groups+' groups ('+(mutate?'owned scratch writes':'retained demo read-only')+').');
 }finally{await page.request.post(url('/api/auth/logout'),{headers:{Origin:base.origin}}).catch(()=>{});await staff?.close();await context.close();await browser.close();}

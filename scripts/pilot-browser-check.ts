@@ -41,7 +41,7 @@ export async function checkPilotBrowser(input:{base:string;cookie:string;leadId:
   await person.getByRole('button',{name:'Save password',exact:true}).click();await expect(person.locator('[data-pilot-message]')).toContainText('Password saved');
   assert(!requests.some(url=>url.includes(new URL(accessUrl).hash.slice(7))));
   await person.getByRole('link',{name:'Go to staff sign in',exact:true}).click();
-  await person.getByLabel('Email address',{exact:true}).fill(email);await person.getByLabel('Password',{exact:true}).fill(password);await person.getByRole('button',{name:/Sign in to your workspace/}).click();
+  await person.getByLabel('Email address',{exact:true}).fill(email);await person.getByLabel('Password',{exact:true}).fill(password);await person.getByRole('button',{name:'Sign in',exact:true}).click();
   await expect(person).toHaveURL(base+'/admin');
   await person.goto(base+'/admin/team');await expect(person.locator('[data-pilot-workspace]')).toContainText('Access restricted');
   console.log('PASS browser team: admin-issued link, immediate fragment removal, personal password, normal login and restricted staff access');

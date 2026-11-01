@@ -14,6 +14,10 @@ export const publicPagePaths = Object.keys(publicPages) as PublicPagePath[];
 export const privatePagePaths = [
  '/admin/login','/admin','/admin/leads','/admin/contacts','/admin/properties','/admin/applications','/admin/calendar',
  '/admin/tasks','/admin/imports','/admin/profile','/admin/settings','/admin/analytics','/admin/ai','/admin/integrations',
+ '/admin/vendor-work','/admin/inspections','/admin/notifications','/admin/resident-documents','/admin/property-insights',
+ '/admin/maintenance','/admin/renewals','/admin/vacancies','/admin/duplicates','/admin/response-targets','/admin/attention',
+ '/admin/intake','/admin/inbox','/admin/automations','/admin/residents','/admin/workspace','/admin/knowledge','/admin/reports',
+ '/admin/team','/admin/onboarding','/staff/access',
  '/applicant','/applicant/login','/applicant/invite','/payment-demo','/book',
 ] as const;
 export type PublicSiteSettings = {origin:string|null;indexing:boolean};

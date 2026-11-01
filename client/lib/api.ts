@@ -23,5 +23,9 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   return body as T;
 }
 export function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+  const message=error instanceof Error ? error.message : 'Something went wrong. Please try again.';
+  return typeof document!=='undefined'&&document.body.matches('.admin-body,.login-body,.staff-access-body')?staffCopy(message):message;
 }
+
+/** Display copy for system notices; never apply to customer messages or record bodies. */
+export const staffCopy=(text:string)=>text.replace(/not configured/gi,'not connected').replace(/requires configuration/gi,'needs setup').replace(/unavailable/gi,'not ready').replace(/simulated/gi,'test');

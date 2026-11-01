@@ -105,7 +105,7 @@ export function initializeLeadWorkspace(signal: AbortSignal, navigate: (path: st
       if (signal.aborted) return;
       const boardQuery = new URLSearchParams(location.search); boardQuery.set('saved', 'stage');
       const destination = form.dataset.return === 'board' ? '/admin/leads?' + boardQuery : '/admin/leads?lead=' + encodeURIComponent(result.lead.id) + '&saved=' + (action === 'stage' ? 'stage' : 'lead');
-      navigate(destination, true, '[data-lead-results]');
+      navigate(destination+(boardQuery.get('view')==='record'?'&view=record':''), true, '[data-lead-results]');
     } catch (error) {
       if (signal.aborted) return;
       if (errorNode) { errorNode.textContent = errorMessage(error); errorNode.tabIndex = -1; errorNode.focus(); }

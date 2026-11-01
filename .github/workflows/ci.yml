@@ -50,6 +50,8 @@ jobs:
         run: npm run check:operations
       - name: Connected leasing, vendor, inspection, document and notification browser journeys
         run: npm run check:operations-browser
+      - name: Bento dashboard, assistant approvals, staff pages and public regressions
+        run: npm run check:browser
       - name: Stop the owned test cluster
         if: always()
         run: npm run db:local:stop

@@ -1,13 +1,14 @@
-import { api, errorMessage, type AuthUser, type PublicConfig } from '../lib/api';
+import {privatePagePaths} from '../../shared/public-site';
+import { api, errorMessage, staffCopy, type AuthUser, type PublicConfig } from '../lib/api';
 import { icon, link, wordmark } from '../lib/ui';
 import type { AccountSnapshot } from '../../shared/account-contracts';
 
 export function loginPage(): string {
-  return `<main id="main-content" class="login-layout"><section class="login-brand-panel">${link('/', wordmark(true), 'brand-link')}<div class="login-brand-copy"><span class="eyebrow">PEOPLE. PROPERTY. POSSIBILITY.</span><h2>A little less<br>scattered.<br><span>A lot more<br>connected.</span></h2><p>Your people, your properties and your next good step. All with a place to call home.</p></div><div class="login-brand-bottom"><span class="small-line"></span> Your next chapter starts here.</div><div class="login-decoration" aria-hidden="true"></div></section><section class="login-form-panel"><div class="login-top-link">${link('/', `${icon('arrow-left')} Back to Ootla`, 'text-link')}</div><div class="login-form-wrap"><span class="eyebrow">STAFF WORKSPACE</span><h1>Welcome to Ootla.</h1><p class="login-intro">Sign in to your organization’s workspace.<br>Pick up where possibility begins.</p><div id="login-setup" class="notice notice-neutral" role="status"><span class="spinner spinner-small" aria-hidden="true"></span><p>Checking workspace availability…</p></div>${new URLSearchParams(location.search).get('passwordChanged') === '1' ? '<p class="notice notice-neutral" role="status">Your password has changed. Sign in again with your new password.</p>' : ''}<form id="login-form"><div class="form-field"><label for="login-email">Email address</label><div class="input-wrap">${icon('mail')}<input id="login-email" name="email" type="email" autocomplete="username" placeholder="you@yourcompany.com" required maxlength="254" spellcheck="false" /></div></div><div class="form-field"><label for="login-password">Password</label><div class="input-wrap">${icon('lock')}<input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Enter your password" required maxlength="256" /><button type="button" class="password-toggle icon-button" data-action="toggle-password" aria-label="Show password" aria-pressed="false">${icon('eye')}</button></div></div><p id="login-error" class="form-error" role="alert" hidden></p><button id="login-submit" type="submit" class="button button-primary login-submit" disabled>Sign in to your workspace ${icon('arrow')}</button><div id="demo-credentials-slot"></div></form><div class="login-privacy">${icon('shield')}<p>Your session is managed securely by Ootla.<br>Your organization’s workspace stays your own.</p></div></div><div class="login-bottom"><span>Thoughtfully connected.</span><span>Ootla foundation</span></div></section></main>`;
+  return `<main id="main-content" class="login-layout"><section class="login-form-panel"><div class="login-top-link">${link('/', `${icon('arrow-left')} Ootla`, 'text-link')}</div><h1>Welcome back.</h1><p class="login-intro">Sign in to your staff workspace.</p><div id="login-setup" class="notice" role="status"><p>Opening your workspace…</p></div>${new URLSearchParams(location.search).get('passwordChanged') === '1' ? '<p class="notice" role="status">Use your new password to sign in.</p>' : ''}<form id="login-form"><div class="form-field"><label for="login-email">Email address</label><div class="input-wrap">${icon('mail')}<input id="login-email" name="email" type="email" autocomplete="username" placeholder="you@company.com" required maxlength="254" spellcheck="false"/></div></div><div class="form-field"><label for="login-password">Password</label><div class="input-wrap">${icon('lock')}<input id="login-password" name="password" type="password" autocomplete="current-password" required maxlength="256"/><button type="button" class="password-toggle icon-button" data-action="toggle-password" aria-label="Show password" aria-pressed="false">${icon('eye')}</button></div></div><p id="login-error" class="form-error" role="alert" hidden></p><button id="login-submit" type="submit" class="b-button b-button-primary login-submit" disabled>Sign in ${icon('arrow')}</button><div id="demo-credentials-slot"></div></form></section></main>`;
 }
 export function safeReturnTo(raw: string | null): string {
   if (!raw) return '/admin';
-  const paths = new Set(['/admin', '/admin/leads', '/admin/contacts', '/admin/properties', '/admin/applications', '/admin/calendar', '/admin/tasks', '/admin/imports', '/admin/profile', '/admin/settings', '/admin/analytics', '/admin/ai', '/admin/integrations']);
+  const paths = new Set<string>(privatePagePaths.filter(path=>path.startsWith('/admin')&&path!=='/admin/login'));
   if (!raw.startsWith('/') || raw.startsWith('//') || raw.includes('\\') || raw.length > 2000) return '/admin';
   try {
     const target = new URL(raw, 'https://ootla.local');
@@ -46,7 +47,7 @@ export async function initializeLogin(signal: AbortSignal, navigate: (path: stri
       if (!signal.aborted) {
         pending = false;
         submit.disabled = !config?.databaseReady;
-        submit.innerHTML = `Sign in to your workspace ${icon('arrow')}`;
+        submit.innerHTML = `Sign in ${icon('arrow')}`;
         form.removeAttribute('aria-busy');
       }
     }
@@ -88,7 +89,7 @@ export async function initializeLogin(signal: AbortSignal, navigate: (path: stri
       setup.innerHTML = `${icon('info')}<div><strong>Your workspace is waiting for setup.</strong><p></p></div>`;
     }
     const setupCopy = setup.querySelector('p');
-    if (!config.databaseReady && setupCopy) setupCopy.textContent = config.setupMessage || 'Ask your administrator to complete database setup, then refresh this page.';
+    if (!config.databaseReady && setupCopy) setupCopy.textContent = staffCopy(config.setupMessage || 'Ask your administrator to finish workspace setup, then refresh.');
     if (config.demoEnabled && config.demoCredentials) {
       const slot = document.querySelector<HTMLDivElement>('#demo-credentials-slot');
       if (slot) {

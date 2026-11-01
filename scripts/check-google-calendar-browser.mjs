@@ -15,7 +15,7 @@ const read=async path=>{const response=await page.request.get(new URL(path,base)
 try{
  await go('/admin/calendar?view=google');await expect(page).toHaveURL(/\/admin\/login\?returnTo=/);
  await page.getByRole('button',{name:'Fill demo credentials',exact:true}).click();assert.equal(writes.length,0);
- await page.getByRole('button',{name:/Sign in to your workspace/}).click();
+ await page.getByRole('button',{name:/Sign in/}).click();
  await expect(page.locator('[data-google-calendar]')).toBeVisible();
  const before=await read('/api/google-calendar');assert.equal(before.state,'demo');assert.equal(before.invitations,'disabled');assert.equal(before.ownership,'ootla_only');assert.equal(before.localSchedulingAvailable,true);
  await expect(page.locator('[data-google-state]')).toContainText('Demo calendar');
@@ -83,7 +83,7 @@ try{
  await mocked.getByRole('button',{name:'Retry failed synchronization',exact:true}).click();await expect(mocked.locator('[data-google-message]')).toContainText('queued');
  mocked.once('dialog',dialog=>dialog.accept());await mocked.getByRole('button',{name:'Disconnect Google',exact:true}).click();await expect(mocked.locator('[data-google-state]')).toContainText('disconnected');
  mockedState='revoked';await mocked.reload();await expect(mocked.locator('[data-google-state]')).toContainText('revoked');await expect(mocked.getByRole('button',{name:'Authorize Google Calendar',exact:true})).toBeVisible();await expect(mocked.getByRole('button',{name:'Sync selected calendars',exact:true})).toHaveCount(0);
- failGoogle=true;await mocked.reload();await expect(mocked.getByRole('heading',{name:'Google status unavailable',exact:true})).toBeVisible();await mocked.getByRole('link',{name:'Open local Calendar',exact:true}).click();await expect(mocked.locator('[data-calendar-workspace] .vc-tabs a[aria-current=page]')).toHaveText('Week');
+ failGoogle=true;await mocked.reload();await expect(mocked.getByRole('heading',{name:'Google needs attention',exact:true})).toBeVisible();await mocked.getByRole('link',{name:'Open local Calendar',exact:true}).click();await expect(mocked.locator('[data-calendar-workspace] .vc-tabs a[aria-current=page]')).toHaveText('Week');
  assert.deepEqual(mockedCalls,['/api/google-calendar/selection','/api/google-calendar/sync','/api/google-calendar/retry','/api/google-calendar/disconnect']);await mockedContext.close();
  pass('intercepted synthetic Google UI: calendar pagination preserves choices/write target, selection, Busy-only display, queued sync/retry, disconnect, revoked reauthorization and graceful optional-Google failure');
 

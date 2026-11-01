@@ -1,3 +1,4 @@
+import {appShell} from '../lib/app-shell';
 import type { AdminPageSummary, AdminSummaryMetric } from '../../shared/admin-summary-contracts';
 import type { TaskReminder } from '../../shared/task-contracts';
 import type { Paginated } from '../../shared/property-contracts';
@@ -135,6 +136,7 @@ export function adminShell(path: string, user?: AuthUser, overview?: Overview, p
   const selectedStages = new Set((query.get('stages') ?? '').split(','));
   const demoContent = !preview && demo?.demo ? demoView(path, demo, query) : undefined;
   const content = contentOverride ?? (path === '/admin' ? dashboardOverview(demo, query) : demoContent ?? (path === '/admin/leads' && query.get('view') === 'new' ? `<div class="workspace-heading"><div><h2>Add lead</h2><p>Lead creation is pending a later stage.</p></div></div><section class="card module-empty"><h2>Lead capture is not available yet</h2><p>No record has been created. Your existing leads and demo data are preserved.</p>${link('/admin/leads','Back to leads','button button-secondary')}</section>` : moduleView(path)));
+  if(!preview&&user)return appShell(path,user,content,notifications);
   const topLink = (href: string, label: string): string => preview ? `<span class="${path === href ? 'active' : ''}">${label}</span>` : `<a href="${href}" data-link class="${path === href ? 'active' : ''}" ${path === href ? 'aria-current="page"' : ''}>${label}</a>`;
   const workspaceLink = (item: typeof workspaceNavigation[number]): string => {
     const selected = path === item.path || (path === '/admin' && item.path === '/admin/leads') || (path === '/admin/imports' && item.path === '/admin/integrations');

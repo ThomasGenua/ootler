@@ -35,9 +35,9 @@ async function signIn(target, email = 'account-check@example.test', password = '
   await target.goto(url(path));
   await target.getByLabel('Email address', { exact: true }).fill(email);
   await target.getByLabel('Password', { exact: true }).fill(password);
-  await expect(target.getByRole('button', { name: /Sign in to your workspace/ })).toBeEnabled();
-  await target.getByRole('button', { name: /Sign in to your workspace/ }).click();
-  await expect(target.locator('.admin-app')).toBeVisible();
+  await expect(target.getByRole('button', { name: /Sign in/ })).toBeEnabled();
+  await target.getByRole('button', { name: /Sign in/ }).click();
+  await expect(target.locator('[data-staff-shell]')).toBeVisible();
 }
 async function signOut() { const response = await page.request.post(url('/api/auth/logout'), { headers: { Origin: base.origin } }); assert.equal(response.status(), 204); }
 async function labels() {
@@ -51,7 +51,7 @@ try {
   else {
     await page.getByRole('button', { name: 'Fill demo credentials', exact: true }).click();
     assert.equal(writes.length, 0, 'Filling credentials does not authenticate.');
-    await page.getByRole('button', { name: /Sign in to your workspace/ }).click();
+    await page.getByRole('button', { name: /Sign in/ }).click();
     await expect(workspace()).toBeVisible();
   }
   await expect(workspace().getByRole('heading', { name: 'Your profile', exact: true })).toBeVisible();
@@ -64,20 +64,20 @@ try {
   const menu = page.getByRole('button', { name: 'Account menu', exact: true });
   await menu.focus(); await page.keyboard.press('Enter');
   await expect(menu).toHaveAttribute('aria-expanded', 'true');
-  await expect(page.locator('#account-menu').getByRole('link', { name: 'View profile', exact: true })).toBeVisible();
-  await expect(page.locator('#account-menu').getByRole('link', { name: 'Edit profile', exact: true })).toBeVisible();
-  await expect(page.locator('#account-menu').getByRole('link', { name: 'Settings', exact: true })).toBeVisible();
+  await expect(page.locator('#b-account').getByRole('link', { name: 'My profile', exact: true })).toBeVisible();
+  await expect(page.locator('#b-account').getByRole('link', { name: 'Settings', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(menu).toHaveAttribute('aria-expanded', 'false');
   await expect(menu).toBeFocused();
   await menu.click();
-  await page.locator('#account-menu').getByRole('link', { name: 'Edit profile', exact: true }).click();
+  await page.locator('#b-account').getByRole('link', { name: 'My profile', exact: true }).click();
+  await workspace().getByRole('link', { name: 'Edit profile', exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/profile\?edit=1/);
   await expect(workspace().getByRole('heading', { name: 'Edit your profile', exact: true })).toBeVisible();
   await labels();
   await menu.click();
-  await page.locator('#account-menu').getByRole('link', { name: 'Settings', exact: true }).click();
-  await expect(workspace().getByRole('heading', { name: 'Account settings', exact: true })).toBeVisible();
+  await page.locator('#b-account').getByRole('link', { name: 'Settings', exact: true }).click();
+  await expect(page.locator('#workspace-title')).toHaveText('Settings');
   await labels();
   assert.equal(legacy.length, 0, 'Account pages do not load unrelated demonstration customer records.');
   pass('profile dropdown destinations, keyboard Enter/Escape and native labeled forms');
@@ -93,7 +93,7 @@ try {
     await expect(workspace().getByRole('status')).toContainText('Your profile has been saved.');
     await expect(workspace()).toContainText('Leasing <review>');
     assert.equal(await workspace().locator('review').count(), 0);
-    await expect(page.locator('.account-toggle .profile-avatar')).toHaveText('AR');
+    await expect(page.locator('.b-rail-profile .b-avatar')).toHaveText('AR');
     await page.reload(); await expect(workspace()).toBeVisible();
     const saved = await read('/api/account');
     assert.equal(saved.profile.displayName, 'Account Reviewer');
@@ -158,7 +158,7 @@ try {
     await password.getByLabel('Confirm new password', { exact: true }).fill('AccountChanged!2026');
     await password.getByRole('button', { name: 'Change password and sign out', exact: true }).click();
     await expect(page).toHaveURL(/\/admin\/login\?passwordChanged=1/);
-    await expect(page.getByRole('status').filter({ hasText: /password.*changed|password.*updated/i })).toBeVisible();
+    await expect(page.getByRole('status').filter({ hasText: /new password|password.*changed|password.*updated/i })).toBeVisible();
     assert.equal((await peerPage.request.get(url('/api/auth/me'))).status(), 401, 'Password changes revoke other sessions.');
     await signIn(page, 'account-check@example.test', 'AccountChanged!2026');
     await expect(workspace()).toBeVisible();
@@ -166,7 +166,7 @@ try {
     await signOut();
     await page.goto(url('/admin/login?returnTo=%2Fadmin%2Fsettings'));
     await page.getByRole('button', { name: 'Fill demo credentials', exact: true }).click();
-    await page.getByRole('button', { name: /Sign in to your workspace/ }).click();
+    await page.getByRole('button', { name: /Sign in/ }).click();
     await expect(workspace()).toBeVisible();
   } else await go('/admin/settings');
 
@@ -183,15 +183,15 @@ try {
     await go('/admin/profile?edit=1'); await labels();
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Profile page fits ' + width + 'px');
     await page.getByRole('button', { name: 'Account menu', exact: true }).click();
-    await expect(page.locator('#account-menu').getByRole('link', { name: 'Settings', exact: true })).toBeVisible();
+    await expect(page.locator('#b-account').getByRole('link', { name: 'Settings', exact: true })).toBeVisible();
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Open account menu fits ' + width + 'px');
-    await page.locator('#account-menu').getByRole('link', { name: 'Settings', exact: true }).click();
+    await page.locator('#b-account').getByRole('link', { name: 'Settings', exact: true }).click();
     await labels();
     assert(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1), 'Settings page fits ' + width + 'px');
     if (width === 390 || width === 1586) await page.screenshot({ path: '.local/screenshots/account-settings-' + width + (mutate ? '-isolated' : '-retained') + '.png', fullPage: true });
   }
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
-  await page.locator('#account-menu').getByRole('button', { name: 'Sign out', exact: true }).click();
+  await page.locator('#b-account').getByRole('button', { name: 'Sign out', exact: true }).click();
   await expect(page).toHaveURL(/\/admin\/login/);
   assert.equal((await page.request.get(url('/api/auth/me'))).status(), 401);
   if (!mutate) assert.equal(writes.filter(item => item.startsWith('PATCH /api/account')).length, 0, 'Retained account checks never change customer or account data.');

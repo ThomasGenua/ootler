@@ -27,7 +27,7 @@ try {
  await expect(link).toHaveAttribute('href',canonical.href);
  await expect(page.getByLabel('Email address',{exact:true})).toBeDisabled();
  await expect(page.getByLabel('Password',{exact:true})).toBeDisabled();
- await expect(page.getByRole('button',{name:/Sign in to your workspace/})).toBeDisabled();
+ await expect(page.getByRole('button',{name:/Sign in/})).toBeDisabled();
  await expect(page.locator('#demo-credentials-slot button')).toHaveCount(0);
  await page.locator('#login-form').evaluate(form=>form.dispatchEvent(new Event('submit',{bubbles:true,cancelable:true})));
  assert.equal(loginPosts,0);
@@ -52,8 +52,8 @@ try {
   const before=loginPosts;
   await page.getByRole('button',{name:button,exact:true}).click();
   await expect(page.getByLabel('Password',{exact:true})).toHaveAttribute('type','password');assert.equal(loginPosts,before);
-  await page.getByRole('button',{name:/Sign in to your workspace/}).click();signedIn=true;
-  await expect(page).toHaveURL(base.origin+route);await expect(page.locator('.admin-app')).toBeVisible();
+  await page.getByRole('button',{name:/Sign in/}).click();signedIn=true;
+  await expect(page).toHaveURL(base.origin+route);await expect(page.locator('[data-staff-shell]')).toBeVisible();
   const me=await page.request.get(base.origin+'/api/auth/me');assert.equal(me.status(),200);assert.equal((await me.json()).user.email,credentials.email);
   const logout=await page.request.post(base.origin+'/api/auth/logout',{headers:{Origin:base.origin}});assert.equal(logout.status(),204);signedIn=false;
  }

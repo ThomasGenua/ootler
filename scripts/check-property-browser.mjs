@@ -75,10 +75,10 @@ try {
   await expect(page.getByLabel('Email address')).toHaveValue('admin@demo.ootla.test');
   await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'password');
   assert.equal(mutationRequests.length, 0, 'Fill does not authenticate.');
-  await page.getByRole('button', { name: /Sign in to your workspace/ }).click();
+  await page.getByRole('button', { name: /Sign in/ }).click();
   await expect(page.locator('[data-property-workspace]')).toBeVisible();
   signedIn = true;
-  await expect(page.locator('.admin-header-body h1')).toHaveText('Properties');
+  await expect(page.locator('#workspace-title')).toHaveText('Properties');
   const baseline = await read('/api/property-foundation/properties?pageSize=25');
   assert.equal(baseline.total, 3, 'The retained demo has three distinct properties.');
   assert.equal(baseline.items.reduce((sum, item) => sum + item.unitCount, 0), 6, 'The six retained units are counted separately.');
@@ -190,10 +190,10 @@ try {
 
   phase = 'overview';
   await page.goto(new URL('/admin', base).href);
-  await expect(page.locator('.admin-header-body h1')).toHaveText('Overview');
-  await expect(page.locator('.summary-metric')).toHaveCount(4);
-  await expect(page.locator('.summary-metric .metric-label')).toHaveText(['New leads', 'Tours booked', 'Applications', 'Leases signed']);
-  await expect(page.locator('[data-demo-lead]')).toHaveCount(3);
+  await expect(page.locator('#workspace-title')).toContainText('Demo');
+  await expect(page.locator('.b-summary .b-stat')).toHaveCount(4);
+  await expect(page.locator('.b-summary .b-stat>span')).toHaveText(['New leads', 'Tours booked', 'Applications', 'Leases signed']);
+  await expect(page.locator('[data-pipeline]')).toBeVisible();
   phase = 'foundation';
   await logOut();
   const denied = await page.request.get(new URL('/api/property-foundation/properties', base).href);

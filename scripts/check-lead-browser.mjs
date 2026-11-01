@@ -71,7 +71,7 @@ try {
   await page.getByRole('button', { name: 'Fill demo credentials', exact: true }).click();
   await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'password');
   assert.equal(mutations.length, 0, 'Credential filling does not authenticate.');
-  await page.getByRole('button', { name: /Sign in to your workspace/ }).click();
+  await page.getByRole('button', { name: /Sign in/ }).click();
   await expect(page.locator('[data-lead-workspace]')).toBeVisible(); signedIn = true;
   const baseline = await read('/api/leads?pageSize=25');
   assert(baseline.items.length >= 3, 'Existing saved demo leads remain available.');
@@ -142,7 +142,7 @@ try {
     assert.equal(created.source, 'referral'); assert.equal(created.preferences.bedrooms, 2);
     assert.equal(created.preferences.budgetMin, 1200); assert.equal(created.interestPropertyIds.length, 2);
     assert(created.nextActionAt); assert.equal(created.stage, 'new_inquiry');
-    await page.reload(); await expect(page.locator('[data-lead-workspace]')).toBeVisible();
+    await page.goto(new URL('/admin/leads?view=record&lead='+detailId,base).href); await expect(page.locator('[data-lead-workspace]')).toBeVisible();
     await expect(page.getByRole('heading', { name, exact: true })).toBeVisible();
     await expect(page.getByText(owner.name, { exact: true }).first()).toBeVisible();
     pass('create real lead with owner, source, two property interests, preferences and next-action date; refresh persistence');
@@ -160,12 +160,12 @@ try {
     await page.getByLabel('Lead source', { exact: true }).selectOption('website');
     await page.getByLabel('Next action', { exact: true }).fill('Confirm the viewing request with staff');
     await page.getByRole('button', { name: 'Save lead', exact: true }).click();
-    await expect(page.locator('[data-lead-event="updated"]')).toHaveCount(1);
+    await expect(page.locator('[data-event-kind="lead_updated"]')).toHaveCount(1);
     await page.getByLabel('Next stage', { exact: true }).selectOption('contacted');
     await page.getByLabel('Reason or handoff note (optional)', { exact: true }).fill('Staff contacted this person in the scripted browser test.');
     await page.getByRole('button', { name: 'Change stage', exact: true }).click();
-    await expect(page.locator('[data-lead-event="stage_changed"]')).toHaveCount(1);
-    await page.reload(); await expect(page.locator('[data-lead-workspace]')).toBeVisible();
+    await expect(page.locator('[data-event-kind="stage_changed"]')).toHaveCount(1);
+    await page.goto(new URL('/admin/leads?view=record&lead='+detailId,base).href); await expect(page.locator('[data-lead-workspace]')).toBeVisible();
     created = (await read('/api/leads/' + detailId)).lead;
     assert.equal(created.stage, 'contacted'); assert.equal(created.source, 'website');
     if (thirdProperty) assert(created.interestPropertyIds.includes(thirdProperty.id), 'Explicitly associated additional property interest persists.');
@@ -210,7 +210,7 @@ try {
 
   const routes = [
     ['/admin/leads', 'list'], ['/admin/leads?view=board', 'board'],
-    ['/admin/leads?lead=' + detailId, 'detail'], ['/admin/leads?view=new&propertyId=' + primary.id, 'create'],
+    ['/admin/leads?view=record&lead=' + detailId, 'detail'], ['/admin/leads?view=new&propertyId=' + primary.id, 'create'],
   ];
   for (const width of [320, 390, 768, 1586]) {
     await page.setViewportSize({ width, height: width < 700 ? 900 : 1050 });
@@ -224,14 +224,14 @@ try {
   phase = 'overview';
   await page.setViewportSize({ width: 1586, height: 1050 });
   await page.goto(new URL('/admin', base).href);
-  await expect(page.locator('.summary-metric')).toHaveCount(4);
-  await expect(page.locator('.followup-card')).toHaveCount(3);
+  await expect(page.locator('.b-summary .b-stat')).toHaveCount(4);
+  await expect(page.locator('[data-pipeline]')).toBeVisible();
   await page.getByRole('link', { name: /Add lead/, exact: false }).click();
   await expect(page).toHaveURL(/\/admin\/leads\?view=new/);
   await expect(page.getByRole('heading', { name: 'Add a lead', exact: true })).toBeVisible();
   await page.goto(new URL('/admin', base).href);
-  await expect(page.locator('.followup-card')).toHaveCount(3);
-  await page.getByRole('link', { name: /View all leads/ }).click();
+  await expect(page.locator('[data-pipeline]')).toBeVisible();
+  await page.getByRole('link', { name: 'Leads', exact: true }).click();
   await expect(page.locator('[data-lead-workspace]')).toBeVisible();
   await signOut();
   assert.equal((await page.request.get(new URL('/api/leads', base).href)).status(), 401);
@@ -240,7 +240,7 @@ try {
   assert.deepEqual(external, [], 'No external requests or communications.');
   assert.deepEqual(legacyDemoReads, [], 'New lead pages never request the legacy whole demo payload.');
   if (!mutate) assert(mutations.every(item => /^POST \/api\/auth\/(login|logout)$/.test(item)), 'Read-only mode changes only its normal session.');
-  pass('approved overview keeps four metrics/three cards, Add lead/View all leads route correctly, logout denies API and no outbound actions');
+  pass('Bento overview keeps four metrics and pipeline; Add lead/Leads navigation works, logout denies API and no outbound actions');
   console.log('Stage 07 focused browser check: ' + groups + ' groups passed (' + (mutate ? 'owned scratch create/edit mode' : 'retained-demo read-only mode') + ').');
 } finally {
   if (signedIn) { try { await page.request.post(new URL('/api/auth/logout', base).href, { headers: { Origin: base.origin } }); } catch {} }

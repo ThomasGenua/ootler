@@ -43,7 +43,7 @@ export type DashboardPeriod = z.infer<typeof dashboardPeriodSchema>;
 export interface DashboardSummary {
   period: DashboardPeriod;
   timeZone: 'Africa/Lagos';
-  metrics: { newLeads: number; toursBooked: number; applications: number | null; leasesSigned: null };
+  metrics: { newLeads: number; toursBooked: number; applications: number | null; leasesSigned: number | null };
 }
 export interface AdminOverview {
   dashboard: DashboardSummary;

@@ -6,7 +6,7 @@ export async function loadGoogleCalendar(signal:AbortSignal):Promise<GoogleCalen
  let status:GoogleCalendarStatus;
  try{status=await api<GoogleCalendarStatus>('/api/google-calendar',{signal});}catch(issue){if(signal.aborted||issue instanceof ApiError&&issue.status===401)throw issue;return{status:null,busy:null,error:errorMessage(issue)};}
  let busy:GoogleCalendarBusy|null=null;
- if(status.selectedCalendars.length){const from=new Date();from.setUTCHours(0,0,0,0);const until=new Date(from.getTime()+7*86400000);try{busy=await api<GoogleCalendarBusy>('/api/google-calendar/busy?'+new URLSearchParams({from:from.toISOString(),until:until.toISOString()}),{signal});}catch(issue){if(signal.aborted||issue instanceof ApiError&&issue.status===401)throw issue;return{status,busy:null,error:'Google Busy periods are temporarily unavailable. '+errorMessage(issue)};}}
+ if(status.selectedCalendars.length){const from=new Date();from.setUTCHours(0,0,0,0);const until=new Date(from.getTime()+7*86400000);try{busy=await api<GoogleCalendarBusy>('/api/google-calendar/busy?'+new URLSearchParams({from:from.toISOString(),until:until.toISOString()}),{signal});}catch(issue){if(signal.aborted||issue instanceof ApiError&&issue.status===401)throw issue;return{status,busy:null,error:'Google busy periods are not ready. '+errorMessage(issue)};}}
 
  return{status,busy};
 }
