@@ -6,7 +6,7 @@ import { ApiError, DatabaseUnavailableError } from '../http/errors.js';
 export class Database {
   readonly pool: Pool | null;
 
-  constructor(config: ServerConfig) {
+  constructor(readonly config: ServerConfig) {
     this.pool = config.databaseUrl ? new Pool({
       connectionString: config.databaseUrl,
       max: 10,

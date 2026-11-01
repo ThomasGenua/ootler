@@ -1,3 +1,4 @@
+import {productivityPaths,productivityPage,initializeProductivity} from './productivity';
 import {collaborationPaths,collaborationPage,initializeCollaboration,residentDocumentCards} from './property-collaboration';
 import {propertyOperationPaths,loadPropertyOperations,initializePropertyOperations,residentWorkflowCards} from './property-operations';
 import {attentionPage,inboxConnections,initializeConnected} from './connected';
@@ -8,7 +9,7 @@ import type { LeadDirectory,LeadDetail } from '../../shared/lead-contracts';
 import type { TaskOptions } from '../../shared/task-contracts';
 type Navigate=(path:string,replace?:boolean)=>void;
 const base='/api/operations';
-export const operationsPaths=[...collaborationPaths,...propertyOperationPaths,'/admin/attention','/admin/intake','/admin/inbox','/admin/automations','/admin/residents','/admin/workspace','/admin/knowledge','/admin/reports'];
+export const operationsPaths=[...productivityPaths,...collaborationPaths,...propertyOperationPaths,'/admin/attention','/admin/intake','/admin/inbox','/admin/automations','/admin/residents','/admin/workspace','/admin/knowledge','/admin/reports'];
 const esc=(v:unknown)=>e(String(v??''));
 const human=(v:unknown)=>esc(String(v??'').replaceAll('_',' '));
 const date=(v:unknown)=>v?esc(new Date(String(v)).toLocaleString()):'—';
@@ -103,6 +104,7 @@ async function reportsPage(q:URLSearchParams,signal:AbortSignal){const data=awai
 export async function loadOperationsPage(path:string,q:URLSearchParams,user:AuthUser,signal:AbortSignal){
  if(!operationsPaths.includes(path))return undefined;
  if(!user.permissions.includes(['/admin/reports','/admin/property-insights'].includes(path)?'analytics.read':'leasing.manage')||['/admin/intake','/admin/automations'].includes(path)&&user.organization.role!=='organization_admin')return wrap('Access restricted','Your current role does not grant access to this workspace.','');
+ if(productivityPaths.includes(path))return productivityPage(path,q,user,signal);
  if(collaborationPaths.includes(path))return collaborationPage(path,q,user,signal);
  if(propertyOperationPaths.includes(path))return loadPropertyOperations(path,q,user,signal);
  if(path==='/admin/attention')return attentionPage(q,signal);
@@ -116,13 +118,13 @@ export async function loadPublicOperations(path:string,q:URLSearchParams,signal:
   return wrap(esc(data.title),'Send a question to the '+esc(data.property_name)+' team.',form('inquire',hidden('challenge',data.challenge)+field('name','Your name','','required maxlength="200" autocomplete="name"')+field('email','Email','','required maxlength="254" autocomplete="email"','email')+field('phone','Mobile phone (optional; include country code)','','pattern="[+][1-9][0-9]{7,14}" autocomplete="tel"','tel')+area('message','How can we help?','',5000)+'<div class="ops-honeypot" aria-hidden="true">'+field('website','Website','','tabindex="-1" autocomplete="off"')+'</div>'+check('emailConsent','The property team may email me about this inquiry.',false,true)+check('smsConsent','The property team may text me about this inquiry. Message and data rates may apply. Reply STOP to opt out.')+'<p>For urgent help, contact the property team directly. Do not include sensitive identity or payment information.</p>'+button('Send inquiry'),data.id));
  }
  const data=await api<Row>('/api/resident',{signal});
- if(q.get('request')){const detail=await api<Row>('/api/resident/requests/'+encodeURIComponent(q.get('request')!),{signal}),r=detail.request;return wrap(esc(r.title),'Your property team can see the information and attachments you share.',link('/resident','Back to my requests','ap-button')+card('Request','<p>'+human(r.status)+' · '+human(r.priority)+'</p><p class="ops-text">'+esc(r.description)+'</p>')+requestHistory(detail)+(r.status!=='closed'?card('Add an update',form('resident-reply',area('body','Your update','',3000)+button('Post update'),r.id))+card('Add an attachment',form('resident-upload',field('file','PDF, PNG, JPEG or text; up to 2 MB','','required accept="application/pdf,image/png,image/jpeg,text/plain"','file')+button('Upload attachment'),r.id)):''));}
+ if(q.get('request')){const detail=await api<Row>('/api/resident/requests/'+encodeURIComponent(q.get('request')!),{signal}),r=detail.request;return wrap(esc(r.title),'Your property team can see the information and attachments you share.',link('/resident','Back to my requests','ap-button')+card('Request','<p>'+human(r.status)+' · '+human(r.priority)+'</p><p class="ops-text">'+esc(r.description)+'</p>')+requestHistory(detail)+(r.status!=='closed'?card('Add an update',form('resident-reply',area('body','Your update','',3000)+button('Post update'),r.id))+card('Add an attachment',form('resident-upload',field('file','PDF, PNG, JPEG or text; up to 20 MiB','','required accept="application/pdf,image/png,image/jpeg,text/plain"','file')+button('Upload attachment'),r.id)):''));}
  return wrap('My resident workspace','Send maintenance requests and follow updates from your property team. This portal is not monitored for emergencies.',link('/applicant','My applications','ap-button')+await residentWorkflowCards(signal)+await residentDocumentCards(signal)+card('My requests',(data.requests as Row[]).map(r=>'<p>'+link('/resident?request='+r.id,esc(r.title))+' · '+human(r.status)+' · '+esc(r.property_name)+'</p>').join('')||empty('No requests yet.'))+(data.residents.length?card('New service request',form('resident-create',select('residentId','My home',data.residents.map((r:Row)=>[r.id,r.property_name+(r.unit_label?' · '+r.unit_label:'')]))+field('title','Short description','','required maxlength="200"')+select('category','Category',['plumbing','electrical','appliance','access','other'].map(s=>[s,s]))+select('priority','Priority',[['normal','Normal'],['urgent','Urgent — also contact your property team']])+area('description','What needs attention?','',5000)+button('Submit request'))):empty('Your resident access begins when your property team completes your move-in. Contact them if you need access.')));
 }
 export function operationsError(error:unknown){return wrap('Unable to open this workspace',errorMessage(error),error instanceof ApiError&&error.status===401?link('/applicant/login','Sign in to the applicant / resident portal','ap-button'):link(location.pathname+location.search,'Try again','ap-button'));}
 export function initializeOperations(signal:AbortSignal,navigate:Navigate){
  initializeConnected(signal,navigate);
- initializePropertyOperations(signal,navigate);initializeCollaboration(signal,navigate);
+ initializeProductivity(signal,navigate);initializePropertyOperations(signal,navigate);initializeCollaboration(signal,navigate);
  const root=document.querySelector<HTMLElement>('[data-operations]');if(!root)return;
  const error=root.querySelector<HTMLElement>('[data-ops-error]')!,notice=root.querySelector<HTMLElement>('[data-ops-notice]')!;
  const showError=(issue:unknown)=>{if(!signal.aborted){error.textContent=errorMessage(issue);error.focus();}};
@@ -172,7 +174,7 @@ export function initializeOperations(signal:AbortSignal,navigate:Navigate){
    else if(action==='resident-create'){endpoint='/api/resident/requests';body=keyed({residentId:get('residentId'),title:get('title'),category:get('category'),description:get('description'),priority:get('priority')});}
    else if(action==='resident-reply'){endpoint='/api/resident/requests/'+id+'/replies';body={body:get('body')};}
    else if(action==='resident-upload'){
-    const file=data.get('file');if(!(file instanceof File)||!file.size||file.size>2*1024*1024)throw Error('Choose a supported file up to 2 MB.');
+    const file=data.get('file');if(!(file instanceof File)||!file.size||file.size>20*1024*1024)throw Error('Choose a supported file up to 20 MiB.');
     const response=await fetch('/api/resident/requests/'+id+'/documents?'+new URLSearchParams({name:file.name}),{method:'POST',headers:{'Content-Type':file.type||'application/octet-stream'},body:file,credentials:'same-origin',signal});
     if(!response.ok){const message=await response.json();throw Error(message.error??'Upload failed.');}navigate(location.pathname+location.search,true);return;
    }else return;

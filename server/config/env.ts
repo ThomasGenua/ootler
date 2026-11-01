@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { z } from 'zod';
 
 const envSchema = z.object({
+  CLAMAV_HOST:z.string().max(253).regex(/^[a-zA-Z0-9.-]*$/).default(''),
+  CLAMAV_PORT:z.coerce.number().int().min(1).max(65535).default(3310),
   COMMUNICATIONS_ENABLED:z.enum(['true','false']).default('false').transform(v=>v==='true'),
   COMMUNICATIONS_ORGANIZATION_ID:z.union([z.uuid(),z.literal('')]).default(''),
   RESEND_API_KEY:z.string().max(1000).default(''),
@@ -86,6 +88,7 @@ export function loadConfig(environment: NodeJS.ProcessEnv = process.env) {
     throw new ConfigurationError('SESSION_SECRET must be a newly generated secret, not an example placeholder.');
   }
   return Object.freeze({
+    documentScanner:Object.freeze({host:values.CLAMAV_HOST,port:values.CLAMAV_PORT}),
     communications:Object.freeze({enabled:values.COMMUNICATIONS_ENABLED,organizationId:values.COMMUNICATIONS_ORGANIZATION_ID,resendKey:values.RESEND_API_KEY,resendFrom:values.RESEND_FROM_EMAIL,replyDomain:values.RESEND_REPLY_DOMAIN,resendWebhookSecret:values.RESEND_WEBHOOK_SECRET,twilioSid:values.TWILIO_ACCOUNT_SID,twilioToken:values.TWILIO_AUTH_TOKEN,twilioFrom:values.TWILIO_FROM_NUMBER}),
     ai: Object.freeze({ enabled: values.AI_ENABLED, apiKey: values.OPENAI_API_KEY, model: values.OPENAI_MODEL }),
     nodeEnv: values.NODE_ENV,

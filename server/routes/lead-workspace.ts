@@ -1,3 +1,4 @@
+import {previewDocument} from '../http/document-preview.js';
 import { Router, raw, type Request, type RequestHandler, type Response } from 'express';
 import { z } from 'zod';
 import type { AuthUser } from '../../shared/contracts.js';
@@ -42,6 +43,7 @@ export function createLeadWorkspaceRouter(config: ServerConfig, database: Databa
         const query = parse(workspaceDocumentQuerySchema, request.query);
         response.status(201).json({ document: await service.upload(actor(response), id(request.params.leadId), query.name, String(response.locals.documentMediaType), request.body as Buffer) });
     });
+    router.get('/:leadId/documents/:documentId/preview',async(request,response)=>{const file=await service.download(actor(response),id(request.params.leadId),id(request.params.documentId));await previewDocument(response,database,{name:file.document.name,mediaType:file.document.mediaType,content:file.content});});
     router.get('/:leadId/documents/:documentId/download', async (request, response) => {
         const { document, content } = await service.download(actor(response), id(request.params.leadId), id(request.params.documentId));
         const ascii = document.name.replace(/[^a-zA-Z0-9._ -]/g, '_').replace(/^[ .]+/, '') || 'document';

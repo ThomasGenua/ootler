@@ -1,3 +1,4 @@
+import {scanDocument} from './document-scanner.js';
 import { createHash, createHmac, randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import type { PoolClient, QueryResult, QueryResultRow } from 'pg';
@@ -383,6 +384,7 @@ export class ApplicantPortal {
             const { a, p } = await this.portalAccess(c, user, id, true);
             if (!(await c.query('SELECT id FROM application_checklist_items WHERE id=$1 AND organization_id=$2 AND application_id=$3 AND active FOR SHARE', [checklistId, a.organization_id, a.id])).rowCount)
                 throw new ApiError(404, 'CHECKLIST_ITEM_NOT_FOUND', 'Choose an active item from your own application checklist.');
+            await scanDocument(this.config,c,content);
             const r = (await c.query('INSERT INTO application_documents(organization_id,application_id,participant_id,checklist_item_id,name,media_type,size_bytes,sha256,content,uploaded_by_user_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10) ON CONFLICT(participant_id,checklist_item_id) DO UPDATE SET name=EXCLUDED.name,media_type=EXCLUDED.media_type,size_bytes=EXCLUDED.size_bytes,sha256=EXCLUDED.sha256,content=EXCLUDED.content,uploaded_by_user_id=EXCLUDED.uploaded_by_user_id,created_at=now() RETURNING id,application_id,checklist_item_id,name,media_type,size_bytes,created_at', [a.organization_id, a.id, p.id, checklistId, name, mediaType, content.length, createHash('sha256').update(content).digest('hex'), content, user.id])).rows[0]!;
             await this.touch(c, a, p, user.id, 'document_uploaded', 'An applicant saved a private checklist document.');
             return document(r);

@@ -1,3 +1,4 @@
+import {scanDocument} from './document-scanner.js';
 import {noOpenInspectionRepairs} from './inspection-readiness.js';
 import { createHash } from 'node:crypto';
 import { TextDecoder } from 'node:util';
@@ -30,8 +31,8 @@ const actor = (id: unknown, name: unknown) => id ? { id: String(id), name: Strin
 const taskSelect = `t.*,om.user_id AS owner_user_id,om.role AS owner_role,ou.display_name AS owner_name,cu.display_name AS creator_name,du.display_name AS completer_name`;
 const taskJoins = `LEFT JOIN organization_memberships om ON om.id=t.owner_membership_id AND om.organization_id=t.organization_id LEFT JOIN users ou ON ou.id=om.user_id LEFT JOIN users cu ON cu.id=t.created_by_user_id LEFT JOIN users du ON du.id=t.completed_by_user_id`;
 const taskDto = (r: Row): WorkspaceTask => ({ id: r.id, leadId: r.lead_id, contactId: r.contact_id, title: r.title, details: r.details, dueAt: iso(r.due_at), status: r.status, owner: r.owner_membership_id ? { membershipId: r.owner_membership_id, userId: r.owner_user_id, name: r.owner_name, role: r.owner_role } : null, createdBy: actor(r.created_by_user_id, r.creator_name), completedBy: actor(r.completed_by_user_id, r.completer_name), completedAt: r.completed_at ? iso(r.completed_at) : null, version: r.version, createdAt: iso(r.created_at), updatedAt: iso(r.updated_at), simulated: typeof r.seed_key === 'string' && r.seed_key.startsWith('stage03.') });
-const documentSelect = `d.id,d.lead_id,d.contact_id,d.name,d.media_type,d.size_bytes,d.sha256,d.uploaded_by_user_id,d.created_at,u.display_name AS uploaded_by_name`;
-const documentDto = (r: Row): WorkspaceDocument => ({ id: r.id, leadId: r.lead_id, contactId: r.contact_id, name: r.name, mediaType: r.media_type, sizeBytes: r.size_bytes, sha256: r.sha256, uploadedBy: { id: r.uploaded_by_user_id, name: r.uploaded_by_name }, createdAt: iso(r.created_at), downloadUrl: `/api/lead-workspaces/${r.lead_id}/documents/${r.id}/download` });
+const documentSelect = `d.scan_status,d.id,d.lead_id,d.contact_id,d.name,d.media_type,d.size_bytes,d.sha256,d.uploaded_by_user_id,d.created_at,u.display_name AS uploaded_by_name`;
+const documentDto = (r: Row): WorkspaceDocument => ({ scanStatus:r.scan_status,id: r.id, leadId: r.lead_id, contactId: r.contact_id, name: r.name, mediaType: r.media_type, sizeBytes: r.size_bytes, sha256: r.sha256, uploadedBy: { id: r.uploaded_by_user_id, name: r.uploaded_by_name }, createdAt: iso(r.created_at), downloadUrl: `/api/lead-workspaces/${r.lead_id}/documents/${r.id}/download` });
 const eventTitles: Record<string, string> = { note: 'Internal note added', call: 'Call logged', task_created: 'Follow-up task created', task_updated: 'Follow-up task updated', document_uploaded: 'Document uploaded', staff_decision: 'Staff review note', created: 'Lead created', updated: 'Lead updated', stage_changed: 'Lead stage changed', application_summary: 'Application summary synchronized', lease_verified: 'Lease milestone verified' };
 function eventDto(r: Row): TimelineEvent { return { id: r.id, kind: r.kind, title: r.title, summary: r.summary, occurredAt: iso(r.occurred_at), actor: actor(r.actor_user_id, r.actor_name), simulated: r.simulated, provenance: r.provenance, metadata: r.metadata ?? {} }; }
 function translate(error: unknown): never {
@@ -134,6 +135,7 @@ export class LeadWorkspaces {
     async upload(u: AuthUser, id: string, name: string, mediaType: string, content: Buffer): Promise<WorkspaceDocument> {
         validateDocument(name, mediaType, content);
         return this.write(u, id, async (c, a, l) => {
+            await scanDocument(this.database.config,c,content);
             const digest = createHash('sha256').update(content).digest('hex');
             const r = (await c.query(`INSERT INTO lead_documents(organization_id,lead_id,property_id,contact_id,name,media_type,size_bytes,sha256,content,uploaded_by_user_id,uploaded_by_membership_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING id`, [a.organization.id, id, l.property_id, l.contact_id, name, mediaType, content.length, digest, content, a.id, a.membershipId])).rows[0]!;
             await this.event(c, a, l, 'document_uploaded', name, { documentId: r.id, mediaType, sizeBytes: content.length });
@@ -201,7 +203,7 @@ export class LeadWorkspaces {
 }
 export function validateDocument(name: string, mediaType: string, content: Buffer): void {
     if (!Buffer.isBuffer(content) || !content.length || content.length > maximumDocumentBytes)
-        throw new ApiError(content?.length > maximumDocumentBytes ? 413 : 400, 'INVALID_DOCUMENT', 'Choose a nonempty document of at most 2 MiB.');
+        throw new ApiError(content?.length > maximumDocumentBytes ? 413 : 400, 'INVALID_DOCUMENT', 'Choose a nonempty document of at most 20 MiB.');
     if (!(allowedDocumentTypes as readonly string[]).includes(mediaType))
         throw new ApiError(415, 'DOCUMENT_TYPE_DENIED', 'Choose PDF, PNG, JPEG or UTF-8 plain text.');
     if (/[\/\\\u0000-\u001f\u007f]/.test(name) || name.startsWith('.') || name.endsWith('.') || name.length > 180)

@@ -76,6 +76,6 @@ export function createResidentRouter(config:ServerConfig,database:Database){
  router.post('/requests',async(r,s)=>s.status(201).json(await service.create(resident(s),json(r,residentRequestSchema))));
  router.get('/requests/:id',async(r,s)=>s.json(await service.detail(resident(s),id(r.params.id))));
  router.post('/requests/:id/replies',async(r,s)=>s.json(await service.reply(resident(s),id(r.params.id),json(r,z.object({body:z.string().trim().min(1).max(3000)}).strict()).body)));
- router.post('/requests/:id/documents',raw({type:['application/pdf','image/png','image/jpeg','text/plain'],limit:'2mb',inflate:false}),async(r,s)=>{const q=parse(z.object({name:z.string().min(1).max(180)}).strict(),r.query);s.status(201).json(await service.upload(resident(s),id(r.params.id),q.name,r.get('content-type')?.split(';')[0]??'',r.body));});
+ router.post('/requests/:id/documents',raw({type:['application/pdf','image/png','image/jpeg','text/plain'],limit:'20mb',inflate:false}),async(r,s)=>{const q=parse(z.object({name:z.string().min(1).max(180)}).strict(),r.query);s.status(201).json(await service.upload(resident(s),id(r.params.id),q.name,r.get('content-type')?.split(';')[0]??'',r.body));});
  router.get('/requests/:id/documents/:documentId',async(r,s)=>download(s,await service.download(resident(s),id(r.params.id),id(r.params.documentId))));return router;
 }

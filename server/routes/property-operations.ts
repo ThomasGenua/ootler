@@ -30,7 +30,7 @@ export function createPropertyOperationsRouter(config:ServerConfig,db:Database,r
  r.post('/maintenance',async(req,s)=>s.status(201).json(await m.create(a(s),d(req),body(req,schema.workOrderCreate))));
  r.get('/maintenance/:id',async(req,s)=>s.json(await m.detail(a(s),d(req),id(req.params.id))));
  r.patch('/maintenance/:id',async(req,s)=>s.json(await m.update(a(s),d(req),id(req.params.id),body(req,schema.workOrderUpdate))));
- r.post('/maintenance/:id/photos',raw({type:['image/png','image/jpeg'],limit:'2mb',inflate:false}),async(req,s)=>{const q=parse(z.object({name:z.string().min(1).max(180)}).strict(),req.query);s.status(201).json(await m.upload(a(s),d(req),id(req.params.id),q.name,req.get('content-type')?.split(';')[0]??'',req.body));});
+ r.post('/maintenance/:id/photos',raw({type:['image/png','image/jpeg'],limit:'20mb',inflate:false}),async(req,s)=>{const q=parse(z.object({name:z.string().min(1).max(180)}).strict(),req.query);s.status(201).json(await m.upload(a(s),d(req),id(req.params.id),q.name,req.get('content-type')?.split(';')[0]??'',req.body));});
  r.get('/maintenance/:id/photos/:photo',async(req,s)=>download(s,await m.photo(a(s),d(req),id(req.params.id),id(req.params.photo))));
  r.get('/residents',async(req,s)=>s.json(await t.residents(a(s),d(req),q(req))));
  r.get('/tenancies',async(req,s)=>s.json(await t.listPlans(a(s),d(req),q(req))));

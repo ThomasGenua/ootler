@@ -183,9 +183,9 @@ try {
     await workspace().locator('[data-document-editor] > summary').click();
     const tooLarge = workspace().locator('[data-workspace-form="document"]');
     const countBefore = mutations.length;
-    await tooLarge.getByLabel('Document file', { exact: true }).setInputFiles({ name: 'too-large.txt', mimeType: 'text/plain', buffer: Buffer.alloc(2*1024*1024+1, 'a') });
+    await tooLarge.getByLabel('Document file', { exact: true }).setInputFiles({ name: 'too-large.txt', mimeType: 'text/plain', buffer: Buffer.alloc(20*1024*1024+1, 'a') });
     await tooLarge.getByRole('button', { name: 'Upload private document', exact: true }).click();
-    await expect(tooLarge.locator('[data-workspace-error]')).toContainText('no larger than 2 MB');
+    await expect(tooLarge.locator('[data-workspace-error]')).toContainText('no larger than 20 MiB');
     assert.equal(mutations.length, countBefore, 'Oversized browser upload is rejected before a request.');
     pass('staff handoff history; private text upload, authorized native download, exact bytes, refresh persistence and upload size validation');
 

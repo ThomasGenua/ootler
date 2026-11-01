@@ -1,3 +1,4 @@
+import {scanDocument} from './document-scanner.js';
 import type {z} from 'zod';
 import type {vendorSchema,workOrderCreate,workOrderUpdate,portfolioQuery} from '../../shared/property-operations-contracts.js';
 import {PropertyOperations,fail,type Actor,type Client} from './property-operations-base.js';
@@ -43,6 +44,6 @@ export class Maintenance extends PropertyOperations {
    await this.history(c,a,w,'maintenance.updated',{...i,requestKey:undefined,previousStatus:w.status});return row;
   });
  });}
- async upload(u:Actor,d:string,id:string,name:string,type:string,content:Buffer){validateDocument(name,type,content);if(!['image/png','image/jpeg'].includes(type))fail('Completion evidence must be a PNG or JPEG photo.');return this.staff(u,d,async(c,a)=>{await this.scoped(c,a,'maintenance_work_orders',id);if(Number((await c.query('SELECT count(*) AS n FROM maintenance_photos WHERE work_order_id=$1',[id])).rows[0].n)>=10)fail('Use at most ten completion photos.');return(await c.query('INSERT INTO maintenance_photos(work_order_id,uploaded_by,name,media_type,content) VALUES($1,$2,$3,$4,$5) RETURNING id',[id,a.id,name,type,content])).rows[0];});}
+ async upload(u:Actor,d:string,id:string,name:string,type:string,content:Buffer){validateDocument(name,type,content);if(!['image/png','image/jpeg'].includes(type))fail('Completion evidence must be a PNG or JPEG photo.');return this.staff(u,d,async(c,a)=>{await this.scoped(c,a,'maintenance_work_orders',id);if(Number((await c.query('SELECT count(*) AS n FROM maintenance_photos WHERE work_order_id=$1',[id])).rows[0].n)>=10)fail('Use at most ten completion photos.');await scanDocument(this.config,c,content);return(await c.query('INSERT INTO maintenance_photos(work_order_id,uploaded_by,name,media_type,content) VALUES($1,$2,$3,$4,$5) RETURNING id',[id,a.id,name,type,content])).rows[0];});}
  async photo(u:Actor,d:string,id:string,photoId:string){return this.staff(u,d,async(c,a)=>{await this.scoped(c,a,'maintenance_work_orders',id);const p=(await c.query('SELECT name,media_type,content FROM maintenance_photos WHERE work_order_id=$1 AND id=$2',[id,photoId])).rows[0];if(!p)throw missing();return p;});}
 }

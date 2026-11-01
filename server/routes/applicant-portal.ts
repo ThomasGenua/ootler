@@ -1,3 +1,4 @@
+import {previewDocument} from '../http/document-preview.js';
 import { Router, raw, type Request, type RequestHandler, type Response } from 'express';
 import { z } from 'zod';
 import type { AuthUser } from '../../shared/contracts.js';
@@ -126,6 +127,7 @@ export function createApplicantPortalRouter(config: ServerConfig, database: Data
         const q = parse(applicantDocumentSchema, request.query);
         response.status(201).json({ document: await service.upload(user(response), id(request.params.applicationId), q.checklistId, q.name, String(response.locals.documentMediaType), request.body as Buffer) });
     });
+    router.get('/applications/:applicationId/documents/:documentId/preview',async(request,response)=>{noQuery(request);const file=await service.download(user(response),id(request.params.applicationId),id(request.params.documentId));await previewDocument(response,database,{name:file.document.name,mediaType:file.document.mediaType,content:file.content});});
     router.get('/applications/:applicationId/documents/:documentId/download', async (request, response) => {
         noQuery(request);
         sendDocument(response, await service.download(user(response), id(request.params.applicationId), id(request.params.documentId)));
@@ -174,6 +176,7 @@ export function createApplicationStaffRouter(config: ServerConfig, database: Dat
         body(request, z.object({}).strict());
         response.json(await service.staffRevokeParticipant(staff(response), id(request.params.applicationId), id(request.params.participantId)));
     });
+    router.get('/:applicationId/documents/:documentId/preview',async(request,response)=>{noQuery(request);const file=await service.staffDownload(staff(response),id(request.params.applicationId),id(request.params.documentId));await previewDocument(response,database,{name:file.document.name,mediaType:file.document.mediaType,content:file.content});});
     router.get('/:applicationId/documents/:documentId/download', async (request, response) => {
         noQuery(request);
         sendDocument(response, await service.staffDownload(staff(response), id(request.params.applicationId), id(request.params.documentId)));

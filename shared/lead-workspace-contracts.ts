@@ -33,6 +33,7 @@ export interface WorkspaceTask {
     simulated: boolean;
 }
 export interface WorkspaceDocument {
+    scanStatus?:'clamav'|'demo'|'legacy_unscanned';
     id: string;
     leadId: string;
     contactId: string;
@@ -95,4 +96,4 @@ export interface LeadWorkspace {
     };
 }
 export const allowedDocumentTypes = ['application/pdf', 'image/png', 'image/jpeg', 'text/plain'] as const;
-export const maximumDocumentBytes = 2 * 1024 * 1024;
+export const maximumDocumentBytes = 20 * 1024 * 1024;
