@@ -12,7 +12,7 @@ interface Queryable {
     query<T extends QueryResultRow = QueryResultRow>(sql: string, values?: unknown[]): Promise<QueryResult<T>>;
 }
 type Row = QueryResultRow;
-export interface TaskCreationOptions {requestKey:string;namespace:'lease_move_in'|'ai_follow_up'|'inspection_repair';origin:'system'|'ai_simulation';purpose:'crm'|'move_in'}
+export interface TaskCreationOptions {requestKey:string;namespace:'lease_move_in'|'ai_follow_up'|'inspection_repair'|'leasing_workflow';origin:'system'|'ai_simulation';purpose:'crm'|'move_in'}
 const escapedLike = (v:string):string => '%' + v.replace(/[\\%_]/g,c=>'\\'+c) + '%';
 type Page = {
     page: number;
@@ -120,7 +120,7 @@ export class Tasks {
     async createLinked(c:PoolClient,u:AuthUser,input:z.infer<typeof taskCreateSchema>,options:TaskCreationOptions):Promise<TaskRecord> {
         const a=await this.authorize(c,u),parsed=parseTaskCreate.safeParse(input);
         if(!parsed.success)throw new ApiError(400,'INVALID_TASK','Use valid task fields and related records.');
-        if(!['lease_move_in','ai_follow_up','inspection_repair'].includes(options.namespace)||!['system','ai_simulation'].includes(options.origin)||!['crm','move_in'].includes(options.purpose)||!options.requestKey||options.requestKey.length>200||!(/^[a-zA-Z0-9:_-]+$/).test(options.requestKey)||options.namespace==='lease_move_in'&&(options.purpose!=='move_in'||options.origin!=='system'||!parsed.data.applicationId)||options.namespace==='ai_follow_up'&&options.purpose!=='crm'||options.namespace==='inspection_repair'&&(options.purpose!=='crm'||options.origin!=='system'||Boolean(parsed.data.leadId)))throw new ApiError(400,'INVALID_TASK_OPERATION','Use a supported internal task operation.');
+        if(!['lease_move_in','ai_follow_up','inspection_repair','leasing_workflow'].includes(options.namespace)||!['system','ai_simulation'].includes(options.origin)||!['crm','move_in'].includes(options.purpose)||!options.requestKey||options.requestKey.length>200||!(/^[a-zA-Z0-9:_-]+$/).test(options.requestKey)||options.namespace==='lease_move_in'&&(options.purpose!=='move_in'||options.origin!=='system'||!parsed.data.applicationId)||options.namespace==='ai_follow_up'&&options.purpose!=='crm'||options.namespace==='inspection_repair'&&(options.purpose!=='crm'||options.origin!=='system'||Boolean(parsed.data.leadId)))throw new ApiError(400,'INVALID_TASK_OPERATION','Use a supported internal task operation.');
         const i=parsed.data,payloadHash=createHash('sha256').update(JSON.stringify({input:i,origin:options.origin,purpose:options.purpose})).digest('hex');
         await c.query('SELECT pg_advisory_xact_lock(hashtextextended($1,0))',['ootla.task.once:'+a.organization.id+':'+options.namespace+':'+options.requestKey]);
         const receipt=(await c.query('SELECT payload_hash,task_id FROM task_creation_receipts WHERE organization_id=$1 AND namespace=$2 AND request_key=$3',[a.organization.id,options.namespace,options.requestKey])).rows[0];

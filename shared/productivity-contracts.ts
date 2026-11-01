@@ -1,0 +1,14 @@
+import {z} from 'zod';
+const text=(max:number)=>z.string().trim().max(max).refine(v=>!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(v));
+export const productivityQuery=z.object({propertyId:z.uuid().optional(),owner:z.enum(['me','team']).default('team'),days:z.coerce.number().int().min(7).max(180).default(30),page:z.coerce.number().int().min(1).max(100000).default(1),q:text(200).default('')}).strict();
+export const feedbackSchema=z.object({requestKey:z.uuid(),version:z.number().int().nonnegative(),interest:z.enum(['interested','considering','not_interested','not_attended']),nextStep:z.enum(['application','another_tour','follow_up','close']),notes:text(4000),title:text(200).min(1),body:text(4000),dueAt:z.iso.datetime({offset:true}),createTask:z.boolean(),createDraft:z.boolean(),confirmed:z.literal(true)}).strict().refine(v=>!v.createDraft||v.body.length>0);
+export const dashboardTiles=['summary','next-tour','pipeline','pulse','upcoming','attention'] as const;
+export const dashboardPreferenceSchema=z.object({version:z.number().int().nonnegative(),propertyId:z.uuid().nullable(),owner:z.enum(['me','team']),tiles:z.array(z.enum(dashboardTiles)).min(1).max(6).refine(v=>new Set(v).size===v.length)}).strict();
+export const shortlistCreateSchema=z.object({requestKey:z.uuid(),leadId:z.uuid(),title:text(150).min(1),unitIds:z.array(z.uuid()).min(1).max(8).refine(v=>new Set(v).size===v.length),expiresInDays:z.number().int().min(1).max(30).default(7),confirmed:z.literal(true)}).strict();
+export const shortlistResponseSchema=z.object({requestKey:z.uuid(),preferredUnitIds:z.array(z.uuid()).min(1).max(8).refine(v=>new Set(v).size===v.length),viewingRequested:z.boolean(),note:text(1000)}).strict();
+export const sequenceStepSchema=z.object({delayHours:z.number().int().min(1).max(720),title:text(200).min(1),body:text(1600),channel:z.enum(['email','sms'])}).strict();
+export const sequenceSchema=z.object({requestKey:z.uuid(),name:text(120).min(1),propertyId:z.uuid(),steps:z.array(sequenceStepSchema).min(1).max(8)}).strict();
+export const sequenceEnrollmentSchema=z.object({requestKey:z.uuid(),leadIds:z.array(z.uuid()).min(1).max(50).refine(v=>new Set(v).size===v.length),confirmed:z.literal(true)}).strict();
+export const versionActionSchema=z.object({requestKey:z.uuid(),version:z.number().int().positive(),action:z.enum(['pause','resume','stop']),confirmed:z.literal(true)}).strict();
+export const playbookCreateSchema=z.object({requestKey:z.uuid(),name:text(120).min(1),sourcePropertyId:z.uuid(),templateIds:z.array(z.uuid()).max(20),inspectionTemplateIds:z.array(z.uuid()).max(20)}).strict();
+export const playbookApplySchema=z.object({requestKey:z.uuid(),propertyId:z.uuid(),previewHash:z.string().regex(/^[a-f0-9]{64}$/),confirmed:z.literal(true)}).strict();
