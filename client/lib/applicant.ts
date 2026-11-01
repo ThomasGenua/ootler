@@ -86,7 +86,7 @@ export function applicantWorkspacePage(data:ApplicantWorkspace):string{
 }
 const allowedTypes=new Set(['application/pdf','image/png','image/jpeg','text/plain']);
 export async function uploadApplicantDocument(endpoint:string,file:File,signal:AbortSignal):Promise<void>{
- if(!file.size||file.size>2*1024*1024)throw new Error('Choose a non-empty document of up to 2 MB.');
+ if(!file.size||file.size>20*1024*1024)throw new Error('Choose a non-empty document of up to 20 MiB.');
  if(!allowedTypes.has(file.type))throw new Error('Choose a PDF, PNG, JPEG or plain text document.');
  const response=await fetch(endpoint,{method:'POST',credentials:'same-origin',headers:{'Content-Type':file.type},body:file,signal});
  if(!response.ok){let message='The document could not be uploaded.';try{const body=await response.json()as{error?:string|{message?:string}};message=typeof body.error==='string'?body.error:body.error?.message??message;}catch{}throw new ApiError(response.status,message);}

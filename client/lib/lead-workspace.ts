@@ -26,7 +26,7 @@ function taskBody(data: FormData): Record<string, unknown> {
 async function upload(leadId: string, data: FormData, signal: AbortSignal): Promise<void> {
   const file = data.get('document');
   if (!(file instanceof File) || !file.size) throw new Error('Choose a non-empty document file first.');
-  if (file.size > maximumDocumentBytes) throw new Error('Choose a document no larger than 2 MB.');
+  if (file.size > maximumDocumentBytes) throw new Error('Choose a document no larger than 20 MiB.');
   const inferred = /\.txt$/i.test(file.name) ? 'text/plain' : /\.pdf$/i.test(file.name) ? 'application/pdf' : /\.png$/i.test(file.name) ? 'image/png' : /\.jpe?g$/i.test(file.name) ? 'image/jpeg' : '';
   const mediaType = file.type || inferred;
   if (!(allowedDocumentTypes as readonly string[]).includes(mediaType)) throw new Error('Choose a PDF, PNG, JPEG or plain text document.');
