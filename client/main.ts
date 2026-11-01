@@ -81,6 +81,8 @@ import { takeApplicantInvitation, renderApplicantAuthentication, initializeAppli
 import './connectors.css';
 import './public-refresh.css';
 import './design-system.css';
+import './admin-shell.css';
+import {initializeAdminShell,closeAdminDrawer,toggleAdminDrawer,toggleAdminRail,clearAdminShellPreference} from './lib/admin-shell';
 import {loadCalendarWorkspace} from './lib/calendar';
 import {createCalendarNavigation,type CalendarNavigator} from './lib/calendar-navigation';
 import { calendarWorkspacePage } from './pages/calendar';
@@ -164,7 +166,7 @@ function sameWorkspace(url:URL,previous=new URL(location.href)):boolean{
  return true;
 }
 document.addEventListener('submit',event=>{submittedForm=event.target instanceof HTMLFormElement?event.target:null;},{capture:true});
-let workspaceMenuOpen = false;
+
 let reportNavigation: ReportNavigator | null = null;
 let calendarNavigation: CalendarNavigator | null = null;
 export function navigate(path: string, replace = false, focusSelector?: string): void {
@@ -173,7 +175,7 @@ export function navigate(path: string, replace = false, focusSelector?: string):
   if (calendarNavigation && location.pathname === '/admin/calendar' && url.origin === location.origin && url.pathname === '/admin/calendar') { calendarNavigation(url, replace, focusSelector); return; }
   const refresh:InPlaceRefresh|undefined = sameWorkspace(url) ? {previousUrl:location.href,committedForm:replace&&submittedForm?.isConnected?submittedForm:null} : undefined;
   submittedForm=null;
-  if (!focusSelector && !refresh) workspaceMenuOpen = false;
+  if (!focusSelector && !refresh) closeAdminDrawer(false);
   if (url.origin !== location.origin) return;
   if (replace) history.replaceState({}, '', url.pathname + url.search + url.hash);
   else history.pushState({}, '', url.pathname + url.search + url.hash);
@@ -184,7 +186,7 @@ async function render(moveFocus = false, focusSelector?: string, retainedScroll?
   reportNavigation = null;
   calendarNavigation = null;
   if(!refresh)currentBindingsController.abort();
-  if(!adminRoutes.has(location.pathname.replace(/\/$/,'')))disposeStaffAssistant();
+  if(!adminRoutes.has(location.pathname.replace(/\/$/,''))){disposeStaffAssistant();closeAdminDrawer(false);}
   currentController.abort();
   currentController = new AbortController();
   const { signal } = currentController;
@@ -320,6 +322,7 @@ async function render(moveFocus = false, focusSelector?: string, retainedScroll?
       writePage(adminShell(path, user, overview, false, demo, query, groupedContent, reminders, renewals ? renewalHeaderSummary(renewals) : residentAdministration ? residentAdministrationHeaderSummary(residentAdministration) : organization ? organizationHeaderSummary(organization) : operations ? operationsHeaderSummary(operations) : voice ? voiceHeaderSummary(voice) : maintenance ? maintenanceHeaderSummary(maintenance) : portfolio ? portfolioHeaderSummary(portfolio) : analytics ? analyticsHeaderSummary(analytics) : calendarSummary, headerCollapsed));
       currentBindingsController.abort();currentBindingsController=new AbortController();
       const bindingSignal=currentBindingsController.signal;
+      initializeAdminShell(user,bindingSignal);
       if (!portfolio && !calendar) initializeTablePagination(bindingSignal,navigate);
       if (organization) initializeOrganizationWorkspace(bindingSignal,navigate,organization);
       if (operations) initializeOperationsWorkspace(bindingSignal,navigate);
@@ -356,8 +359,7 @@ async function render(moveFocus = false, focusSelector?: string, retainedScroll?
       if (tasks) initializeTasksWorkspace(bindingSignal, navigate);
       if (foundation) initializePropertyWorkspace(bindingSignal, navigate);
       if (leads) { initializeLeadWorkspace(bindingSignal, navigate); if (leads.kind === 'detail') { initializeLeadWorkspace08(bindingSignal, navigate); initializeLeadDetail(bindingSignal, navigate); } }
-      document.querySelector('#admin-sidebar-nav')?.classList.toggle('is-open', workspaceMenuOpen);
-      document.querySelector('[data-action="admin-menu"]')?.setAttribute('aria-expanded', String(workspaceMenuOpen));
+
     } catch (error) {
       if (signal.aborted || generation !== routeGeneration) return;
       if (error instanceof ApiError && error.status === 401) {
@@ -431,13 +433,15 @@ document.addEventListener('click', (event) => {
   if (!button) return;
   const action = button.dataset.action;
   if (action === 'retry') void render();
-  if (action === 'public-menu' || action === 'admin-menu') {
+  if (action === 'public-menu') {
     const expanded = button.getAttribute('aria-expanded') === 'true';
     button.setAttribute('aria-expanded', String(!expanded));
-    if (action === 'admin-menu') workspaceMenuOpen = !expanded;
     document.getElementById(button.getAttribute('aria-controls') ?? '')?.classList.toggle('is-open', !expanded);
-    if (action === 'public-menu') button.setAttribute('aria-label', expanded ? 'Open navigation' : 'Close navigation');
+    button.setAttribute('aria-label', expanded ? 'Open navigation' : 'Close navigation');
   }
+  if (action === 'admin-menu') toggleAdminDrawer(button);
+  if (action === 'rail-close') closeAdminDrawer();
+  if (action === 'rail-collapse') toggleAdminRail();
   if (action === 'lead-search' || action === 'notifications' || action === 'account-menu') togglePopover(button);
   if (action === 'header-summary') toggleHeaderSummary(button);
   if (action === 'logout') void logout(button);
@@ -495,6 +499,7 @@ async function logout(button: HTMLButtonElement): Promise<void> {
   try {
     await api('/api/auth/logout', { method: 'POST' });
     clearHeaderPreference();
+    clearAdminShellPreference();
     navigate('/admin/login', true);
   } catch (error) {
     button.disabled = false;

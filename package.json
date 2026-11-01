@@ -12,6 +12,7 @@
     "dev:server": "tsx watch --clear-screen=false server/index.ts",
     "build": "npm run typecheck && vite build && tsc -p tsconfig.server.json",
     "start": "node dist/server/server/index.js",
+    "check:admin-shell": "node scripts/check-admin-shell.mjs",
     "check:design-system": "node scripts/check-design-system.mjs",
     "typecheck": "tsc -p tsconfig.client.json --noEmit && tsc -p tsconfig.server.json --noEmit",
     "db:migrate": "tsx scripts/migrate.ts",

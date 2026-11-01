@@ -3038,3 +3038,14 @@ Focused npm run check:design-system passed all 12 groups, including 11 semantic 
 npm run build passed client/server TypeScript, Vite and compiled server; a final Vite build refreshed the last CSS/HTML-only corrections. Existing large bundle advisory remains; no comprehensive regression, paid CI or external integration acceptance claimed. Evidence ignored at .local/design-system-check. Build brief and docs/ootla-ui-overhaul.md record the latest authority and checklist.
 
 Review http://127.0.0.1:7673/design-system.html and http://127.0.0.1:7673/admin/login. Use normal demo credential fill; no passwords changed. Test Tab/Shift+Tab/Escape, arrow tabs, menus/dialogs/drawer/confirmation, Rows per page then Apply and mobile widths. No install/migration/seed/reset/restart commands required. No database/environment/backend/production/live-checkout changes or communications. Shared-system stage only; STOP before shell/bento/page redesign.
+
+
+## Design checkpoint paused by user — 2026-11-01
+
+The user paused all redesign work and requested its preservation on the separate `ootlademo2` branch, followed by returning the demo checkout to `ootla-v1-demo` and its pre-redesign UI. This is an unfinished checkpoint, not completion or visual approval. Do not resume design work without a new explicit instruction.
+
+Preserved here: the committed shared design system plus the in-progress shared staff shell (`client/admin-shell.css`, `client/lib/admin-shell.ts`, `client/pages/admin.ts`, `client/main.ts`) and focused shell checks. The shell has an espresso rail, ivory workspace, utility header, shared title/actions/summary strip, mobile drawer and persistent floating Ask access. Existing domain services, sessions, permissions, data and public dashboard preview remain intact. No backend, migration, environment, dependency, credential, seed or live communication change.
+
+Verification before the pause: the prior client/server build passed and the shared design-system suite passed all 12 groups. An earlier shell run passed its eight groups including 23 staff routes, mobile drawer and Maintenance search/scroll preservation. Later additions are unfinished: the latest expanded Overview filter check timed out while awaiting its response; inspect the check and behavior before claiming acceptance. The latest CSS-only correction has not received a final build. Review also identified that tapping the already-active rail link on mobile can leave the drawer open, including Calendar/Reports paths with early navigation handlers. Preserve this known issue for resumption; it was not patched after the user paused work.
+
+On resumption: inspect the checkpoint, address the mobile same-route drawer issue and Overview filter check, run focused checks/build, then update acceptance results. Bento Overview and record/public page compositions remain future work. No database reset/reseed or live deployment is authorized.

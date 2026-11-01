@@ -267,7 +267,8 @@ async function checkExistingRoutes() {
     const tables = await page.locator('table').evaluateAll(elements => elements.map(element => getComputedStyle(element).backgroundColor));
     assert(tables.every(color => color === 'rgb(255, 255, 255)'), route + ' tables have white card surfaces.');
     const summaries=await page.locator('.summary-metric').evaluateAll(elements=>elements.map(element=>getComputedStyle(element).backgroundColor));
-    assert(summaries.length===4 && summaries.every(color=>color==='rgb(59, 50, 43)'),route+' uses warm shared summary surfaces.');
+    const shellV2=await page.locator('.admin-shell-v2').count()>0;
+    assert(summaries.length===4 && summaries.every(color=>shellV2?color==='rgba(0, 0, 0, 0)':color==='rgb(59, 50, 43)'),route+' uses warm shared summary surfaces.');
     const recordLink=page.locator('table a:not([class*="button"])').first();
     if(await recordLink.count())assert.equal(await recordLink.evaluate(element=>getComputedStyle(element).color),'rgb(182, 67, 42)',route+' record links use the shared action shade.');
     const canvas = await page.locator('.admin-app').evaluate(element => getComputedStyle(element).backgroundColor);

@@ -2,6 +2,10 @@
 
 Recorded: 2026-10-21. Last updated: 2026-10-23 (Africa/Lagos).
 
+## Latest working direction — 2026-11-01
+
+The user paused the UI overhaul. Preserve all design work only on `ootlademo2`, push that checkpoint, and return the existing demo checkout to `ootla-v1-demo` with its pre-redesign UI. Do not continue the shell or later design stages. This branch records unfinished work and verification in `docs/ootla-ui-overhaul.md`. Preserve application data, private settings, credentials, authentication and business workflows.
+
 ## Current redesign scope - 2026-11-01
 
 Implement redesign work in C:/Users/user/Documents/software/ootlademo on ootla-v1-demo, as explicitly corrected by the user. Do not modify the separate live checkout. Warm ivory #FBF4E9, terracotta #C85135, espresso #29221D, white and pale clay #F6E4D7 replace conflicting historical green visuals. Preserve the roof-over-initial-O logo, actual workflows, data, authentication, permissions, integrations and demo credential helpers. See [the demo overhaul progress](ootla-ui-overhaul.md).

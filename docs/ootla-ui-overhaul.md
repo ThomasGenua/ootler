@@ -2,7 +2,7 @@
 
 ## Current authority and checkout
 
-Updated 2026-11-01. The user explicitly moved redesign implementation to C:/Users/user/Documents/software/ootlademo on ootla-v1-demo. The separate Ootla/ootla-v1-branch checkout is not modified by this stage. Preserve the existing Vite/vanilla TypeScript, Express and PostgreSQL architecture, records, sessions, permissions and workflows.
+Updated 2026-11-01. The user explicitly moved redesign implementation to C:/Users/user/Documents/software/ootlademo on ootlademo2 for the isolated redesign checkpoint. The separate Ootla/ootla-v1-branch checkout is not modified by this stage. Preserve the existing Vite/vanilla TypeScript, Express and PostgreSQL architecture, records, sessions, permissions and workflows.
 
 Six approved Downloads references establish warm ivory, terracotta and espresso: landing (551ecb9f), Ask compact/labeled variants (3a66c9e1 / 2da11725), Maintenance detail (8e63c48c), Lead detail (23ec0ef2) and bento Overview (1b9acd20). The full inventory from the preceding inspection was written in the separate Ootla checkout. That inventory is not proof that newer live-only modules exist in this older demo; inspect this checkout before each next stage.
 
@@ -63,3 +63,14 @@ Measured contrast: white/action 5.49:1; espresso/canvas 14.33:1; muted/canvas 5.
 Corrected initial headline specificity, light Explore link/dark paragraph contrast, semantic destructive variants, actual summary-metric surfaces and record-link aliases. Inverse focus applies to dark controls rather than white popovers inside headers. Explicit existing pagination Apply behavior is preserved. Theme host is on initial HTML to avoid the old palette before JavaScript. Existing exact artwork/animation is retained; separate future page composition is not started.
 
 npm run build passed client/server type checks, Vite and server compilation. After final CSS selector/HTML-only corrections, the Vite client was rebuilt successfully. Existing large-chunk advisory remains; no dependency/environment/database/migration change. Comprehensive regression deferred as requested. Final evidence: .local/design-system-check/observations.json and screenshots. STOP.
+
+
+## Design checkpoint paused by user — 2026-11-01
+
+The user paused all redesign work and requested its preservation on the separate `ootlademo2` branch, followed by returning the demo checkout to `ootla-v1-demo` and its pre-redesign UI. This is an unfinished checkpoint, not completion or visual approval. Do not resume design work without a new explicit instruction.
+
+Preserved here: the committed shared design system plus the in-progress shared staff shell (`client/admin-shell.css`, `client/lib/admin-shell.ts`, `client/pages/admin.ts`, `client/main.ts`) and focused shell checks. The shell has an espresso rail, ivory workspace, utility header, shared title/actions/summary strip, mobile drawer and persistent floating Ask access. Existing domain services, sessions, permissions, data and public dashboard preview remain intact. No backend, migration, environment, dependency, credential, seed or live communication change.
+
+Verification before the pause: the prior client/server build passed and the shared design-system suite passed all 12 groups. An earlier shell run passed its eight groups including 23 staff routes, mobile drawer and Maintenance search/scroll preservation. Later additions are unfinished: the latest expanded Overview filter check timed out while awaiting its response; inspect the check and behavior before claiming acceptance. The latest CSS-only correction has not received a final build. Review also identified that tapping the already-active rail link on mobile can leave the drawer open, including Calendar/Reports paths with early navigation handlers. Preserve this known issue for resumption; it was not patched after the user paused work.
+
+On resumption: inspect the checkpoint, address the mobile same-route drawer issue and Overview filter check, run focused checks/build, then update acceptance results. Bento Overview and record/public page compositions remain future work. No database reset/reseed or live deployment is authorized.
