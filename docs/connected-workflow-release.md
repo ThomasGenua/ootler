@@ -37,7 +37,7 @@ Access is checked again by the server on sync. Stale records stop syncing and pr
 3. Run `npm run release:check` (container: `node dist/server/scripts/release-check.js`). This reads schema readiness and submits a harmless connectivity probe to the configured scanner. It does not migrate, seed, send messages or change customer records.
 4. Deploy/restart the application and verify `/api/ready`, login, a private upload/preview and sequence processing in the intended environment.
 
-On 2026-11-01, `https://ootla.ai` responded behind Cloudflare, but `/api/ready` returned the older API-not-found response. The connected Render workspace returned no services. The backend hosting provider/dashboard is still needed to apply live migrations and configure the scanner; this branch does not claim those live operations were performed.
+On 2026-11-01, the owner confirmed that `https://ootla.ai` runs on their own server. The public site responded behind Cloudflare, but `/api/ready` returned the older API-not-found response. Server access, the application directory and the existing process/container configuration must be identified before applying live migrations or configuring the scanner. Preserve the existing reverse proxy, database and secret configuration; use the container commands above only if that matches the server's deployment method. This branch does not claim those live operations were performed.
 
 ## Validation
 
