@@ -1,3 +1,4 @@
+import {workflowPaths,workflowsPage,initializeWorkflows} from './workflows';
 import {productivityPaths,productivityPage,initializeProductivity} from './productivity';
 import {collaborationPaths,collaborationPage,initializeCollaboration,residentDocumentCards} from './property-collaboration';
 import {propertyOperationPaths,loadPropertyOperations,initializePropertyOperations,residentWorkflowCards} from './property-operations';
@@ -9,7 +10,7 @@ import type { LeadDirectory,LeadDetail } from '../../shared/lead-contracts';
 import type { TaskOptions } from '../../shared/task-contracts';
 type Navigate=(path:string,replace?:boolean)=>void;
 const base='/api/operations';
-export const operationsPaths=[...productivityPaths,...collaborationPaths,...propertyOperationPaths,'/admin/attention','/admin/intake','/admin/inbox','/admin/automations','/admin/residents','/admin/workspace','/admin/knowledge','/admin/reports'];
+export const operationsPaths=[...workflowPaths,...productivityPaths,...collaborationPaths,...propertyOperationPaths,'/admin/attention','/admin/intake','/admin/inbox','/admin/automations','/admin/residents','/admin/workspace','/admin/knowledge','/admin/reports'];
 const esc=(v:unknown)=>e(String(v??''));
 const human=(v:unknown)=>esc(String(v??'').replaceAll('_',' '));
 const date=(v:unknown)=>v?esc(new Date(String(v)).toLocaleString()):'—';
@@ -104,6 +105,7 @@ async function reportsPage(q:URLSearchParams,signal:AbortSignal){const data=awai
 export async function loadOperationsPage(path:string,q:URLSearchParams,user:AuthUser,signal:AbortSignal){
  if(!operationsPaths.includes(path))return undefined;
  if(!user.permissions.includes(['/admin/reports','/admin/property-insights'].includes(path)?'analytics.read':'leasing.manage')||['/admin/intake','/admin/automations'].includes(path)&&user.organization.role!=='organization_admin')return wrap('Access restricted','Your current role does not grant access to this workspace.','');
+ if(workflowPaths.includes(path))return workflowsPage(path,q,user,signal);
  if(productivityPaths.includes(path))return productivityPage(path,q,user,signal);
  if(collaborationPaths.includes(path))return collaborationPage(path,q,user,signal);
  if(propertyOperationPaths.includes(path))return loadPropertyOperations(path,q,user,signal);
@@ -124,7 +126,7 @@ export async function loadPublicOperations(path:string,q:URLSearchParams,signal:
 export function operationsError(error:unknown){return wrap('Unable to open this workspace',errorMessage(error),error instanceof ApiError&&error.status===401?link('/applicant/login','Sign in to the applicant / resident portal','ap-button'):link(location.pathname+location.search,'Try again','ap-button'));}
 export function initializeOperations(signal:AbortSignal,navigate:Navigate){
  initializeConnected(signal,navigate);
- initializeProductivity(signal,navigate);initializePropertyOperations(signal,navigate);initializeCollaboration(signal,navigate);
+ initializeWorkflows(signal,navigate);initializeProductivity(signal,navigate);initializePropertyOperations(signal,navigate);initializeCollaboration(signal,navigate);
  const root=document.querySelector<HTMLElement>('[data-operations]');if(!root)return;
  const error=root.querySelector<HTMLElement>('[data-ops-error]')!,notice=root.querySelector<HTMLElement>('[data-ops-notice]')!;
  const showError=(issue:unknown)=>{if(!signal.aborted){error.textContent=errorMessage(issue);error.focus();}};

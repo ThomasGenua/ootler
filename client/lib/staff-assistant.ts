@@ -20,7 +20,7 @@ export function initializeStaffAssistant(signal:AbortSignal,user:AuthUser,naviga
  const owner=user.organization.id+':'+user.id;if(owner!==contextOwner){contextLead=null;contextOwner=owner;}root.dataset.askReady='true';root.dataset.commandReady='true';
  const ask=root.querySelector<HTMLElement>('#b-ask')!,body=root.querySelector<HTMLElement>('[data-ask-body]')!,input=root.querySelector<HTMLTextAreaElement>('#b-ask-input')!,form=root.querySelector<HTMLFormElement>('[data-ask-form]')!,error=root.querySelector<HTMLElement>('[data-ask-error]')!,drawerHost=root.querySelector<HTMLElement>('[data-lead-drawer-host]')!;
  let history:ChatEntry[]=[],sending=false,drawerSequence=0,contextSequence=0,opener:HTMLElement|null=null,drawer:LeadWorkspace|null=null,drawerChanged=false;
- const routeQuery=new URLSearchParams(location.search),nativeLeadContext=['/admin/ai','/admin/calendar','/admin/inbox','/admin/shortlists'].includes(location.pathname)||routeQuery.get('view')==='record';
+ const routeQuery=new URLSearchParams(location.search),nativeLeadContext=['/admin/ai','/admin/calendar','/admin/inbox','/admin/shortlists','/admin/prospect-journeys','/admin/lead-routing'].includes(location.pathname)||routeQuery.get('view')==='record';
  let underlyingLead=nativeLeadContext?routeQuery.get('lead'):null;
  const openAsk=()=>document.dispatchEvent(new CustomEvent('ootla:open-ask'));
  const suggestions=()=>{root.querySelector<HTMLElement>('[data-shell=clear-context]')!.textContent=contextLead?.name??'Dashboard';root.querySelector('[data-ask-suggestions]')!.innerHTML=(contextLead?['Summarise this lead','Draft a reply','Create a follow-up task']:['Who needs a follow-up today?','Who is touring next?']).map(q=>chip(q,'data-ask-prompt="'+e(q)+'"')).join('');};
