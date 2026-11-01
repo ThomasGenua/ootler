@@ -1,0 +1,22 @@
+# Attach the application to ootla-private and set CLAMAV_HOST=clamav.
+# Select a reviewed supported official release tag/digest before starting.
+services:
+  clamav:
+    image: ${CLAMAV_IMAGE:?Set a reviewed official clamav/clamav release tag or digest}
+    restart: unless-stopped
+    mem_limit: 4g
+    volumes:
+      - signatures:/var/lib/clamav
+    networks:
+      - ootla-private
+    # No published host port. FreshClam retains outbound access for signatures.
+    healthcheck:
+      start_period: 5m
+      interval: 30s
+      timeout: 10s
+      retries: 3
+volumes:
+  signatures:
+networks:
+  ootla-private:
+    name: ootla-private

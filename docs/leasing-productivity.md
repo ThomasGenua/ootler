@@ -32,13 +32,13 @@ Administrators can define up to eight steps, each waiting 1–720 hours after en
 
 Each due step creates a task and optionally an **unsent** Resend/Twilio-compatible draft. Delivery still requires the existing Messages review, consent and send action. A prospect reply, stage change, closure, channel opt-out or unavailable administrator stops the sequence. Untouched generated tasks and drafts are cancelled; staff-edited work is preserved. Paused enrollments still receive stop checks. Resuming an overdue enrollment makes its next step eligible on the next worker run.
 
-Run the bounded worker regularly, for example every minute:
+The connected workflow release starts this bounded worker every minute inside the API. A separate schedule is not required. To run a batch manually:
 
 ```sh
 npm run sequences:process
 ```
 
-It uses row locks and persistent step receipts so concurrent workers and retries cannot duplicate work. **Process due steps** in the workspace runs one batch manually. No scheduled service is provisioned by this code change.
+It uses row locks and persistent step receipts so concurrent workers and retries cannot duplicate work. **Process due steps** in the workspace runs one batch manually. The API waits for its current worker batch during shutdown.
 
 ## Documents and malware checks
 
