@@ -2,6 +2,12 @@
 
 Recorded: 2026-10-21. Last updated: 2026-10-23 (Africa/Lagos).
 
+## Current redesign scope - 2026-11-01
+
+Implement redesign work in C:/Users/user/Documents/software/ootlademo on ootla-v1-demo, as explicitly corrected by the user. Do not modify the separate live checkout. Warm ivory #FBF4E9, terracotta #C85135, espresso #29221D, white and pale clay #F6E4D7 replace conflicting historical green visuals. Preserve the roof-over-initial-O logo, actual workflows, data, authentication, permissions, integrations and demo credential helpers. See [the demo overhaul progress](ootla-ui-overhaul.md).
+
+The current stage authorizes the central shared design system and representative components only, not later page layouts. No reset/reseed/destructive migration, live communications, paid visual operations or deployment. Focused checks now; comprehensive regression at final acceptance. Complete the stage, update progress and STOP.
+
 ## Working method and current authorization
 
 Ootla is a property sales, leads and leasing CRM with embedded AI.

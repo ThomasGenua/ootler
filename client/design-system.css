@@ -1,0 +1,246 @@
+/* Shared Ootla appearance. Import last: domain styles retain layout and behavior.
+   .ootla-theme raises the central bridge above legacy scoped appearance rules. */
+:root {
+  --color-canvas:#FBF4E9; --color-accent:#C85135; --color-espresso:#29221D;
+  --color-surface:#FFFFFF; --color-clay:#F6E4D7;
+  --color-text:#29221D; --color-text-muted:#6C6056; --color-text-inverse:#FFFFFF;
+  --color-surface-muted:#F5EEE5; --color-surface-hover:#FAF1E9;
+  --color-border:#E3D8CC; --color-border-strong:#97887B; --color-border-control:var(--color-border-strong);
+  /* The supplied accent is 4.48:1 on white; deepen small white-label controls. */
+  --color-action:#B6432A; --color-action-hover:#A63923; --color-action-active:#8E301E;
+  --color-focus:#973A25; --color-focus-inverse:#FFD6BE;
+  --color-error:#A32C2C; --color-error-surface:#FFF0ED;
+  --color-warning:#80510D; --color-warning-surface:#FFF4D8;
+  --color-success:#246143; --color-success-surface:#EDF6EF;
+  --color-disabled:#76695E; --color-disabled-surface:#EEE7DE;
+  --color-overlay:#29221D73;
+  --font-sans:'Ootla Inter','Inter','Segoe UI',system-ui,-apple-system,BlinkMacSystemFont,sans-serif;
+  --font:var(--font-sans); --weight-body:400; --weight-label:500; --weight-heading:600; --weight-marketing:500;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-5:20px;
+  --space-6:24px; --space-8:32px; --space-10:40px; --space-12:48px;
+  --radius-control:10px; --radius-card:18px; --radius-dialog:22px; --radius-pill:999px;
+  --shadow-card:0 2px 10px #29221D05; --shadow-popover:0 8px 28px #29221D18;
+  --shadow-dialog:0 16px 56px #29221D26; --duration-fast:140ms;
+  /* Compatibility aliases: business status colors remain semantic, not brand aliases. */
+  --green:var(--color-action); --green-dark:var(--color-action-hover); --green-light:var(--color-clay);
+  --charcoal:var(--color-espresso); --off-white:var(--color-canvas); --white:var(--color-surface);
+  --text:var(--color-text); --muted:var(--color-text-muted); --line:var(--color-border);
+  --danger:var(--color-error); --radius-sm:var(--radius-control); --radius:var(--radius-card); --radius-lg:var(--radius-dialog);
+}
+:root.ootla-theme {color:var(--color-text);background:var(--color-canvas);font-family:var(--font-sans);color-scheme:light}
+:root.ootla-theme body {background:var(--color-canvas);color:var(--color-text);font-family:var(--font-sans);font-weight:400}
+:root.ootla-theme :is(button,input,textarea,select) {font-family:var(--font-sans)}
+:root.ootla-theme ::selection {background:var(--color-clay);color:var(--color-text)}
+:root.ootla-theme :focus-visible {outline:3px solid var(--color-focus);outline-offset:3px;box-shadow:0 0 0 2px var(--color-surface)}
+:root.ootla-theme :is(.header-icon-button,.account-toggle,.admin-top-nav a,.admin-topline>.brand-link,.period-control select,.ap-header-actions a,.ap-header-actions button,.site-footer a):focus-visible {outline-color:var(--color-focus-inverse);box-shadow:0 0 0 2px var(--color-espresso)}
+:root.ootla-theme :is(h1,h2,h3,h4) {font-weight:var(--weight-heading);letter-spacing:-.025em}
+:root.ootla-theme .public-body :is(h1,h2), :root.ootla-theme .ds-marketing-heading {font-weight:var(--weight-marketing);letter-spacing:-.04em}
+:root.ootla-theme :is(label,summary,button,[role=tab]) {font-weight:var(--weight-label)}
+.ds-sr-only {position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
+
+/* Shared primitives and compatibility bridge: appearance only, never domain visibility. */
+:root.ootla-theme :is(.ds-button,.button,.pw-button,.tw-button,.l08-button,.lw-button,.cv-button,.ap-button,.im-button,.cn-button,.ac-button,.vc-button,.oa-button) {
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:9px 14px;
+  border:1px solid var(--color-border-strong);border-radius:var(--radius-control);background:var(--color-surface);
+  color:var(--color-text);font-size:14px;line-height:1.35;font-weight:500;text-decoration:none;
+  cursor:pointer;box-shadow:none;transition:background-color var(--duration-fast),border-color var(--duration-fast);transform:none;
+}
+:root.ootla-theme :is(.ds-button,.button,.pw-button,.tw-button,.l08-button,.lw-button,.cv-button,.ap-button,.im-button,.cn-button,.ac-button,.vc-button,.oa-button):hover:not(:disabled) {background:var(--color-surface-hover);border-color:var(--color-action);transform:none}
+:root.ootla-theme :is(.ds-button--primary,.button-primary,.pw-button-primary,.tw-button.tw-primary,.l08-primary,.lw-primary,.cv-primary,.ap-button.ap-primary,.im-primary,.cn-button.cn-primary,.ac-primary,.vc-primary,.oa-primary) {background:var(--color-action);border-color:var(--color-action);color:var(--color-text-inverse)}
+:root.ootla-theme :is(.ds-button--primary,.button-primary,.pw-button-primary,.tw-button.tw-primary,.l08-primary,.lw-primary,.cv-primary,.ap-button.ap-primary,.im-primary,.cn-button.cn-primary,.ac-primary,.vc-primary,.oa-primary):hover:not(:disabled) {background:var(--color-action-hover);border-color:var(--color-action-hover);color:var(--color-text-inverse);box-shadow:none}
+:root.ootla-theme :is(.ds-button--primary,.button-primary):active:not(:disabled) {background:var(--color-action-active)}
+:root.ootla-theme :is(.ds-button--quiet,.ds-icon-button) {border-color:transparent;background:transparent;color:var(--color-text)}
+:root.ootla-theme :is(.ds-button--danger,.vc-danger,.im-danger,.oa-danger,.ac-danger) {background:var(--color-error);border-color:var(--color-error);color:white}
+:root.ootla-theme :is(.ds-button--danger,.vc-danger,.im-danger,.oa-danger,.ac-danger):hover:not(:disabled) {background:#842222;border-color:#842222;color:white}
+:root.ootla-theme :is(.ds-button,.button,.pw-button,.tw-button,.l08-button,.lw-button,.cv-button,.ap-button,.im-button,.cn-button,.ac-button,.vc-button,.oa-button):disabled {background:var(--color-disabled-surface);border-color:var(--color-border);color:var(--color-disabled);opacity:1;cursor:not-allowed;transform:none}
+:root.ootla-theme .ds-icon-button {width:40px;padding:8px;flex-shrink:0}
+:root.ootla-theme .ds-button--small {min-height:34px;padding:6px 10px;font-size:13px}
+:root.ootla-theme :is(.ds-button,.button) .icon {width:18px;height:18px}
+:root.ootla-theme :is(.text-link,.pw-filter-chip,.tw-filter-chip,.public-sign-in) {color:var(--color-action)}
+:root.ootla-theme .text-link-light {color:var(--color-action)}
+
+.ds-field {display:grid;align-content:start;gap:6px;min-width:0}
+.ds-label {font-size:13px;font-weight:500;line-height:1.4}
+.ds-help,.ds-muted {color:var(--color-text-muted);font-size:13px;line-height:1.5}
+.ds-field-error {font-size:13px;line-height:1.5;color:var(--color-error)}
+:root.ootla-theme :is(.ds-input,input:not([type=hidden]):not([type=checkbox]):not([type=radio]):not([type=range]):not([type=file]):not([type=color]),select,textarea) {
+  color:var(--color-text);background-color:var(--color-surface);border-color:var(--color-border-strong);border-radius:var(--radius-control);font-size:14px;line-height:1.4;
+}
+.ds-input {width:100%;min-width:0;min-height:40px;padding:9px 11px;border:1px solid var(--color-border-strong);font:inherit}
+.ds-input:is(select) {width:auto;max-width:100%;padding-right:30px}
+.ds-input:is(textarea) {resize:vertical;min-height:90px}
+:root.ootla-theme :is(input,textarea)::placeholder {color:var(--color-text-muted);opacity:1}
+:root.ootla-theme :is(input,textarea,select):disabled {color:var(--color-disabled);background:var(--color-disabled-surface);opacity:1}
+:root.ootla-theme [aria-invalid=true] {border-color:var(--color-error)}
+:root.ootla-theme :is(input[type=checkbox],input[type=radio]) {accent-color:var(--color-action)}
+:root.ootla-theme .input-wrap {border-color:var(--color-border-strong);background:var(--color-surface);border-radius:var(--radius-control)}
+:root.ootla-theme .input-wrap:focus-within {border-color:var(--color-focus);box-shadow:0 0 0 2px var(--color-clay)}
+.ds-search {display:flex;align-items:center;gap:8px;flex:1 1 240px;min-width:0;padding-left:12px;background:var(--color-surface);border:1px solid var(--color-border-strong);border-radius:var(--radius-control)}
+.ds-search>.icon {color:var(--color-text-muted);flex-shrink:0}
+:root.ootla-theme .ds-search .ds-input {border:0;background:transparent}
+.ds-toolbar {display:flex;align-items:center;gap:8px;flex-wrap:wrap;min-width:0}
+.ds-toolbar+.ds-toolbar {margin-top:12px}
+.ds-form-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ds-menu {position:relative;max-width:100%}
+.ds-menu>summary {list-style:none;user-select:none}
+.ds-menu>summary::-webkit-details-marker {display:none}
+.ds-menu-items {position:absolute;inset:calc(100% + 8px) 0 auto auto;z-index:50;display:grid;gap:8px;width:max-content;min-width:200px;max-width:min(340px,calc(100vw - 48px));max-height:min(360px,65dvh);overflow:auto;overscroll-behavior:contain;padding:12px;border:1px solid var(--color-border);border-radius:14px;background:var(--color-surface);box-shadow:var(--shadow-popover)}
+.ds-menu-items>.ds-button {justify-content:flex-start;width:100%}
+.ds-filter .ds-menu-items {width:280px}
+:root.ootla-theme :is(.pw-filter-popover,.tw-filter-popover,.lw-filter-popover,.rw-filter-popover,.header-popover,.workflow-menu-panel,.cv-chat-menu>div) {background:var(--color-surface);color:var(--color-text);border-color:var(--color-border);border-radius:14px;box-shadow:var(--shadow-popover);max-height:min(420px,70dvh);overflow:auto;overscroll-behavior:contain}
+
+:root.ootla-theme :is(.ds-card,.card,.pw-panel,.tw-panel,.l08-panel,.ld-summary,.lw-panel,.cv-panel,.ap-panel,.im-panel,.cn-panel,.ac-panel,.vc-panel,.oa-panel,.followup-card,.admin-sidebar) {background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-card);box-shadow:var(--shadow-card)}
+.ds-card {min-width:0;overflow:visible}
+.ds-card-header {padding:16px 18px 0}
+.ds-card-header h3 {margin:0;font-size:16px;line-height:1.4;font-weight:600}
+.ds-card-body {padding:16px 18px;min-width:0}
+.ds-card-body p {font-size:14px;line-height:1.6}
+.ds-card-footer {padding:0 18px 16px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ds-summary {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:0 0 16px;padding:16px 0;border:1px solid var(--color-border);border-radius:18px;background:white;box-shadow:var(--shadow-card)}
+.ds-metric {min-width:0;padding:0 20px;border-right:1px solid var(--color-border)}
+.ds-metric:last-child {border:0}
+.ds-metric dt {font-size:13px;font-weight:500;color:var(--color-text-muted)}
+.ds-metric dd {margin:8px 0 0;font-size:28px;line-height:1.2;font-weight:600;font-variant-numeric:tabular-nums}
+.ds-metric small {display:block;margin-top:6px;font-size:12px;line-height:1.4;font-weight:400;color:var(--color-text-muted)}
+:root.ootla-theme :is(.metric-card,.metric-card-compact,.summary-metric) {background:#3B322B;border-color:#66574B;border-radius:16px;box-shadow:none}
+:root.ootla-theme .metric-icon {background:#564035;color:#FFE1CF}
+.ds-tabs {min-width:0}
+.ds-tab-list {display:flex;gap:16px;max-width:100%;overflow:auto;border-bottom:1px solid var(--color-border)}
+.ds-tab {flex-shrink:0;min-height:40px;padding:8px 3px;border:0;border-bottom:3px solid transparent;background:transparent;color:var(--color-text-muted);font:inherit;font-weight:500}
+.ds-tab[aria-selected=true] {color:var(--color-text);border-bottom-color:var(--color-action)}
+.ds-tab-panel {padding-top:16px}
+:root.ootla-theme :is(.ac-tabs,.tw-tabs,.pw-tabs,.lw-tabs,.ld-tabs) :is([aria-selected=true],[aria-current=page]) {background:var(--color-clay);color:var(--color-action);border-color:var(--color-action)}
+.ds-badge {display:inline-flex;align-items:center;gap:4px;max-width:100%;padding:4px 9px;border-radius:999px;font-size:12px;line-height:1.4;font-weight:500;background:var(--color-surface-muted);color:var(--color-text-muted)}
+.ds-badge--accent {background:var(--color-clay);color:var(--color-action-active)}
+.ds-badge--success {background:var(--color-success-surface);color:var(--color-success)}
+.ds-badge--warning {background:var(--color-warning-surface);color:var(--color-warning)}
+.ds-badge--error {background:var(--color-error-surface);color:var(--color-error)}
+:root.ootla-theme :is(.badge-neutral,.cv-status,.oa-status,.pw-filter-count,.tw-filter-count) {background:var(--color-surface-muted);color:var(--color-text-muted);border-color:var(--color-border)}
+:root.ootla-theme :is(.badge-green,.status-new,.status-new-inquiry) {background:var(--color-clay);color:var(--color-action-active);border-color:var(--color-clay)}
+:root.ootla-theme .oa-status.degraded {background:var(--color-warning-surface);color:var(--color-warning)}
+
+.ds-table-frame {max-width:100%;overflow:auto;border:1px solid var(--color-border);border-radius:16px;background:white;overscroll-behavior:contain}
+.ds-table {width:100%;border-collapse:collapse;white-space:nowrap;text-align:left;font-size:14px}
+.ds-table :is(th,td) {padding:11px 14px;border-bottom:1px solid var(--color-border);line-height:1.5}
+.ds-table tr:last-child td {border-bottom:0}
+.ds-table th {background:var(--color-surface-muted);color:var(--color-text-muted);font-size:12px;font-weight:500}
+:root.ootla-theme :is(.pw-table-wrap,.tw-table-wrap,.lw-table-wrap,.cv-table-wrap,.ap-table-wrap,.im-table-wrap,.cn-table-wrap,.oa-table-wrap) {background:var(--color-surface);border-color:var(--color-border);border-radius:16px}
+:root.ootla-theme .admin-app table {background:var(--color-surface);color:var(--color-text)}
+:root.ootla-theme .admin-app :is(th,td) {border-color:var(--color-border)}
+:root.ootla-theme .admin-app th {background:var(--color-surface-muted);color:var(--color-text-muted)}
+:root.ootla-theme .table-page-size.table-page-size.table-page-size :is(select,button) {border-color:var(--color-border-strong);background:var(--color-surface);color:var(--color-text);border-radius:var(--radius-control);font-weight:500}
+:root.ootla-theme .table-pagination :is(label,span,p) {color:var(--color-text-muted)}
+:root.ootla-theme .table-pagination :is(select,button) {width:auto;min-height:36px}
+:root.ootla-theme .table-pagination [aria-disabled=true] {color:var(--color-disabled)}
+
+:root.ootla-theme dialog {border-color:var(--color-border);border-radius:var(--radius-dialog);background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-dialog);font-family:var(--font-sans)}
+:root.ootla-theme dialog::backdrop {background:var(--color-overlay)}
+.ds-dialog {width:min(520px,calc(100vw - 32px));max-height:calc(100dvh - 32px);padding:0;overflow:auto;border:1px solid var(--color-border);overscroll-behavior:contain}
+.ds-dialog-head {display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--color-border)}
+.ds-dialog-head h2 {margin:0;font-size:20px;line-height:1.3}
+.ds-dialog-body {padding:20px;display:grid;gap:16px}
+.ds-dialog-body p {font-size:14px;line-height:1.6}
+.ds-dialog-footer {display:flex;justify-content:flex-end;flex-wrap:wrap;gap:8px;padding:16px 20px;border-top:1px solid var(--color-border)}
+.ds-dialog--drawer {position:fixed;inset:12px 12px 12px auto;margin:0;width:min(420px,calc(100vw - 24px));height:calc(100dvh - 24px);max-height:none}
+.ds-dialog--drawer[open] {display:flex;flex-direction:column}
+.ds-dialog--drawer .ds-dialog-body {overflow:auto;flex:1;align-content:start;min-height:0}
+.ds-dialog--confirm {width:min(420px,calc(100vw - 32px))}
+.ds-toast {display:flex;align-items:flex-start;gap:10px;padding:12px 14px;border-radius:12px;border:1px solid var(--color-border);background:var(--color-surface);color:var(--color-text);font-size:14px;line-height:1.5}
+.ds-toast+.ds-toast {margin-top:10px}
+.ds-toast--success>.icon {color:var(--color-success)}
+.ds-toast--error {border-color:var(--color-error);color:var(--color-error);background:var(--color-error-surface)}
+.ds-toast-region {position:fixed;right:20px;bottom:20px;z-index:100;max-width:min(380px,calc(100vw - 40px));box-shadow:var(--shadow-popover);border-radius:12px}
+.ds-toast-region:empty {display:none}
+.ds-skeleton {display:grid;gap:10px;padding-block:8px}
+.ds-skeleton>span:not(.ds-sr-only) {display:block;height:14px;border-radius:6px;background:var(--color-border);animation:ds-pulse 1.4s ease-in-out infinite}
+.ds-skeleton>span:last-child {width:65%}
+@keyframes ds-pulse {50%{opacity:.45}}
+.ds-state {display:flex;flex-direction:column;align-items:flex-start;gap:10px;padding:8px 0;color:var(--color-text)}
+.ds-state>.icon {color:var(--color-text-muted)}
+.ds-state h3 {font-size:16px;margin:0}
+.ds-state p {color:var(--color-text-muted);font-size:14px;line-height:1.6}
+.ds-state--error>.icon {color:var(--color-error)}
+:root.ootla-theme :is(.form-error,.field-error,.cv-error,.tw-error,.pw-error,.ap-error,.ac-error) {color:var(--color-error);border-color:var(--color-error);background-color:var(--color-error-surface)}
+.ds-avatar {display:inline-grid;place-items:center;flex-shrink:0;width:40px;height:40px;border-radius:50%;background:var(--color-surface-muted);color:var(--color-text);font-size:14px;font-weight:500}
+.ds-avatar--small {width:32px;height:32px;font-size:12px}
+.ds-avatar--large {width:52px;height:52px;font-size:17px}
+:root.ootla-theme :is(.profile-avatar,.lead-avatar,.cv-avatar,.lw-avatar) {background:var(--color-surface-muted);color:var(--color-text);border-color:var(--color-border)}
+.ds-attachment {display:flex;align-items:center;gap:12px;max-width:100%;padding:10px;border:1px solid var(--color-border);border-radius:12px;background:var(--color-surface);color:var(--color-text)}
+.ds-attachment-thumb {width:88px;height:64px;object-fit:cover;border-radius:8px}
+.ds-attachment-meta {display:grid;gap:4px;min-width:0;flex:1;overflow-wrap:anywhere}
+.ds-attachment-meta strong {font-size:13px;font-weight:500}
+.ds-attachment-meta small {font-size:12px;color:var(--color-text-muted)}
+
+/* Existing shells receive the palette, not a premature navigation/layout redesign. */
+:root.ootla-theme :is(.admin-body,.admin-app,.property-workspace,.task-workspace,.lead-workspace08,.account-workspace,.applicant-body,.resident-body,.home-page,.public-detail-page) {color:var(--color-text)}
+:root.ootla-theme :is(.admin-header,.ap-header,.home-band-dark,.public-section-dark,.public-primary,.site-footer) {background:var(--color-espresso);color:var(--color-text-inverse)}
+:root.ootla-theme :is(.site-header,.site-header-inner,.home-page,.public-detail-page,.public-explore) {background:var(--color-canvas)}
+:root.ootla-theme :is(.home-page .hero-copy h1,.detail-hero h1,.workspace-content h2) {color:var(--color-text)}
+:root.ootla-theme :is(.home-page .hero-copy>p,.detail-hero p,.story-copy>p,.detail-copy p) {color:var(--color-text-muted)}
+:root.ootla-theme :is(.home-band-dark,.public-section-dark,.public-primary,.site-footer) :is(.text-link-light,.text-link) {color:var(--color-focus-inverse)}
+:root.ootla-theme :is(.home-band-dark,.public-section-dark,.public-primary) :is(.detail-copy p,.story-copy>p,.detail-section-heading>p,.public-primary-heading>p) {color:#E7DAD0}
+:root.ootla-theme .public-body :is(.hero-actions .button,.home-final-cta .button,.button-header) {background:var(--color-action);border-color:var(--color-action);color:white;box-shadow:none}
+:root.ootla-theme .public-body :is(.hero-actions .button,.home-final-cta .button,.button-header):hover {background:var(--color-action-hover)}
+:root.ootla-theme .admin-nav-item.active {background:var(--color-clay);color:var(--color-action-active)}
+:root.ootla-theme .admin-top-nav a[aria-current=page] {background:#594035;color:white}
+:root.ootla-theme :is(.header-icon-button,.account-toggle,.period-control select) {background:transparent;border-color:#A78C79;color:white;box-shadow:none}
+:root.ootla-theme .ask-floating-launcher {background:var(--color-action);color:white;border-color:var(--color-action);box-shadow:var(--shadow-popover)}
+:root.ootla-theme .ask-floating-launcher:hover {background:var(--color-action-hover)}
+:root.ootla-theme :is(.ootla-dialog-head,.ootla-dialog-compose,.ootla-dialog-body) {background:var(--color-surface);color:var(--color-text);border-color:var(--color-border)}
+:root.ootla-theme :is(.ask-bubble-user,.cv-bubble-outbound) {background:var(--color-clay);color:var(--color-text)}
+:root.ootla-theme :is(.pw-panel,.tw-panel,.l08-panel,.ap-panel,.cn-panel) {padding:20px}
+:root.ootla-theme .workspace-content :is(h2,.lw-heading h2,.pw-heading h2,.tw-heading h2) {font-size:26px;line-height:1.25;font-weight:600}
+:root.ootla-theme :is(.admin-page-title,.admin-header-body h1) {font-size:32px;font-weight:600}
+
+/* Recolor original transparent artwork with masks; retain its roof/O geometry and motion. */
+:root.ootla-theme .wordmark {--brand-ink-color:var(--color-text)}
+:root.ootla-theme .wordmark-on-dark {--brand-ink-color:var(--color-text-inverse)}
+:root.ootla-theme .wordmark .brand-piece {
+  background:var(--brand-ink-color);filter:none;
+  -webkit-mask-image:url('/brand/ootla-wordmark.png');mask-image:url('/brand/ootla-wordmark.png');
+  -webkit-mask-size:194.594595% 199.753086%;mask-size:194.594595% 199.753086%;
+  -webkit-mask-position:50.687831% 44.306930%;mask-position:50.687831% 44.306930%;
+  -webkit-mask-repeat:no-repeat;mask-repeat:no-repeat;
+}
+:root.ootla-theme .wordmark .brand-piece.brand-roof {background:var(--color-accent)}
+:root.ootla-theme .wordmark .brand-piece>.brand-source {visibility:hidden}
+:root.ootla-theme .wordmark .brand-still .brand-piece {animation:none;transform:none}
+
+/* Development-only workbench: representative components, never CRM operations. */
+.ds-workbench {max-width:1240px;margin:auto;padding:28px 24px 80px;color:var(--color-text);font-size:14px}
+.ds-workbench-header {display:flex;align-items:center;gap:24px;margin-bottom:24px}
+.ds-workbench-header h1 {font-size:28px;margin:4px 0 8px;line-height:1.2}
+.ds-workbench-header p {color:var(--color-text-muted);line-height:1.6}
+.ds-eyebrow {font-size:11px;font-weight:500;color:var(--color-action);letter-spacing:.08em;text-transform:uppercase}
+.ds-workbench-nav {display:flex;gap:16px;flex-wrap:wrap;padding:12px 0;border-block:1px solid var(--color-border)}
+.ds-workbench-nav a {color:var(--color-action);font-weight:500;padding:4px 0}
+.ds-section {margin-top:28px;scroll-margin-top:16px}
+.ds-section>h2 {font-size:20px;margin:0 0 14px}
+.ds-workbench-grid {display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.ds-marketing-heading {font-size:32px;line-height:1.15;margin:10px 0 16px}
+.ds-workbench-status {margin-top:24px;color:var(--color-text-muted);min-height:24px}
+@media(max-width:700px) {
+  .ds-workbench {padding:20px 16px 80px}.ds-workbench-header {align-items:flex-start;flex-direction:column;gap:16px}
+  .ds-workbench-grid {grid-template-columns:1fr}.ds-form-grid {grid-template-columns:1fr}
+  .ds-summary {grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 0}.ds-metric:nth-child(2) {border:0}
+  .ds-toolbar>.ds-search {flex-basis:100%}.ds-menu-items {right:auto;left:0}
+  :root.ootla-theme :is(.ds-button,.ds-input,.ds-tab,.ds-menu>summary) {min-height:44px}
+  :root.ootla-theme .table-pagination :is(select,button) {min-height:44px}
+  .ds-dialog-head,.ds-dialog-body,.ds-dialog-footer {padding:16px}
+  .ds-dialog--drawer {inset:8px;margin:0;width:calc(100vw - 16px);height:calc(100dvh - 16px)}
+  .ds-attachment-thumb {width:64px;height:56px}.ds-metric {padding-inline:16px}
+}
+@media(prefers-reduced-motion:reduce) {
+  :root.ootla-theme {--duration-fast:0ms;scroll-behavior:auto}
+  .ds-skeleton>span {animation:none}
+}
+body[data-account-motion=reduce] .ds-skeleton>span {animation:none}
+
+:root.ootla-theme:has(body[data-account-motion=reduce]) {--duration-fast:0ms}
+
+:root.ootla-theme .summary-metric :is(.metric-label,.metric-note) {color:#E7DAD0}
+:root.ootla-theme .admin-nav-item:not(.active) {color:var(--color-text-muted)}
+:root.ootla-theme .admin-nav-item.active>.icon {color:currentColor}
+:root.ootla-theme :is(.property-workspace,.task-workspace,.lead-workspace08,.lead-workspace,.cv-workspace,.account-workspace,.ap-main) a:not(:where(.button,.pw-button,.tw-button,.l08-button,.lw-button,.cv-button,.ap-button,.im-button,.cn-button,.ac-button,.vc-button,.oa-button)) {color:var(--color-action)}
+:root.ootla-theme :is(.pw-heading,.tw-heading,.lw-heading) p, :root.ootla-theme :is(.lw-hint,.pw-meta,.tw-meta,.cv-muted,.tw-description) {color:var(--color-text-muted)}
+:root.ootla-theme .workspace-content :is(h2,h3,h4) {color:var(--color-text)}

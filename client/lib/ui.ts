@@ -45,7 +45,8 @@ export function wordmark(dark = false, admin = false): string {
   // Every piece uses the supplied artwork; clipping follows transparent gaps.
   const pieces=['brand-roof','brand-first-o',...['o','t','l','a'].map(letter=>'brand-letter brand-letter-'+letter)]
     .map(piece=>'<span class="brand-piece '+piece+'">'+artwork+'</span>').join('');
-  const still=dark ? '<span class="brand-ink">'+artwork+'</span><span class="brand-green">'+artwork+'</span>' : artwork;
+  // Reuse original roof/O/letter geometry in both still and animated palette masks.
+  const still=pieces;
   return '<span class="wordmark ' + (dark ? 'wordmark-on-dark ' : '') + (admin ? 'admin-wordmark' : '') + '" role="img" aria-label="Ootla"><span class="brand-art" aria-hidden="true">' + '<span class="brand-still">'+still+'</span><span class="brand-motion">'+pieces+'</span></span></span>';
 }
 export function link(href: string, text: string, className = ''): string {

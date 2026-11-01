@@ -80,6 +80,7 @@ import { applicationsWorkspacePage } from './pages/applications';
 import { takeApplicantInvitation, renderApplicantAuthentication, initializeApplicantAuthentication, loadApplicantWorkspace, applicantWorkspacePage, initializeApplicantWorkspace, applicantRouteError } from './lib/applicant';
 import './connectors.css';
 import './public-refresh.css';
+import './design-system.css';
 import {loadCalendarWorkspace} from './lib/calendar';
 import {createCalendarNavigation,type CalendarNavigator} from './lib/calendar-navigation';
 import { calendarWorkspacePage } from './pages/calendar';
@@ -114,6 +115,7 @@ import { adminError, adminShell } from './pages/admin';
 import { initializeLogin, loginPage } from './pages/login';
 import { notFoundPage, publicPage } from './pages/public';
 
+document.documentElement.classList.add('ootla-theme');
 const app = document.querySelector<HTMLDivElement>('#app')!;
 const publicRoutes = new Set(['/', '/platform', '/ai-workflows', '/workflows/leasing', '/workflows/resident-support', '/integrations', '/contact', '/privacy']);
 const residentRoutes = new Set(['/resident','/resident/login','/resident/invite']);

@@ -36,6 +36,8 @@ export function publicSeoPlugin(environment:Record<string,string|undefined>,proj
    devServer=server;
    server.middlewares.use((request,response,next)=>{
     const route=new URL(request.url??'/', 'http://localhost').pathname,normalized=publicPath(route),alias=publicHtmlAlias(route);
+    // Component workbench exists only in Vite development, never compiled routes.
+    if(route==='/design-system.html'&&(request.method==='GET'||request.method==='HEAD')){response.setHeader('X-Robots-Tag','noindex, nofollow');next();return;}
     if(alias&&(request.method==='GET'||request.method==='HEAD')){response.statusCode=308;response.setHeader('Location',alias);response.end();return;}
     if((request.method==='GET'||request.method==='HEAD')&&(normalized==='/robots.txt'||normalized==='/sitemap.xml')){
      response.statusCode=200;response.setHeader('X-Robots-Tag','noindex, follow');response.setHeader('Content-Type',normalized==='/robots.txt'?'text/plain; charset=utf-8':'application/xml; charset=utf-8');response.end(request.method==='HEAD'?'':normalized==='/robots.txt'?robotsText(settings()):sitemapXml(settings()));return;
@@ -48,6 +50,7 @@ export function publicSeoPlugin(environment:Record<string,string|undefined>,proj
    });
   },
   transformIndexHtml:{order:'post',async handler(html,context){
+   if(command==='serve'&&new URL(context.originalUrl??context.path,'http://localhost').pathname==='/design-system.html')return html;
    const pathname=publicPath(new URL(context.originalUrl??context.path,'http://localhost').pathname);
    const route=command==='build'?'/':pathname;
    return renderPublicDocument(html,route,settings(),isPublicPage(route)?await render(route):'');
