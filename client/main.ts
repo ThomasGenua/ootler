@@ -27,6 +27,13 @@ import { takePaymentDemoToken, initializePaymentDemo } from './lib/payments';
 import { takeApplicantInvitation, renderApplicantAuthentication, initializeApplicantAuthentication, loadApplicantWorkspace, applicantWorkspacePage, initializeApplicantWorkspace, applicantRouteError } from './lib/applicant';
 import './connectors.css';
 import './public-refresh.css';
+import '@fontsource/inter/latin-400.css';
+import '@fontsource/inter/latin-500.css';
+import '@fontsource/inter/latin-600.css';
+import '@fontsource/inter/latin-700.css';
+import '../src/styles/tokens.css';
+import '../src/styles/staff.css';
+import {initializeShell,shellLoading} from './lib/app-shell';
 import { bookingPage } from './pages/booking';
 import { initializeBooking } from './lib/booking';
 import { accountWorkspacePage } from './pages/account';
@@ -146,7 +153,7 @@ async function render(moveFocus = false, focusSelector?: string): Promise<void> 
     app.innerHTML = loginPage();
     void initializeLogin(signal, navigate);
   } else if (adminRoutes.has(path)) {
-    app.innerHTML = loading();
+    app.innerHTML = shellLoading();
     try {
       const { user } = await api<{ user: AuthUser }>('/api/auth/me', { signal });
       const account = await api<AccountSnapshot>('/api/account', { signal });
@@ -198,6 +205,7 @@ async function render(moveFocus = false, focusSelector?: string): Promise<void> 
         : undefined;
       if (signal.aborted || generation !== routeGeneration) return;
       app.innerHTML = adminShell(path, user, overview, false, demo, query, operations ?? pilot ?? (applications ? applicationsWorkspacePage!(applications, user, query) : calendar ? calendarWorkspacePage!(calendar,user,query) : accountPage ? accountWorkspacePage(accountPage, user, query) : connectors ? connectorWorkspacePage!(connectors, user, query) : imports ? importWorkspacePage!(imports, user, query) : foundation ? propertyWorkspacePage!(foundation, user, query) : leads ? leadWorkspacePage!(leads, user, query) : tasks ? taskWorkspacePage!(tasks, user, query) : path === '/admin/tasks' ? '<section class="card module-empty"><h2>Tasks are restricted to authorized staff</h2><p>Your current role does not grant access to private task details. Ask an organization administrator to review your permissions.</p></section>' : followups ? persistentDashboardOverview(followups.items, Boolean(overview.demoEnabled)) : undefined), reminders, pageSummary, headerCollapsed, notifications);
+      initializeShell(signal,navigate);
       if (operations) operationsModule!.initializeOperations(signal,navigate);
       if (pilot) initializePilot!(signal, navigate, user);
       if (applications) initializeApplicationsWorkspace!(signal,navigate,user);

@@ -74,9 +74,11 @@
     "check:pilot-browser": "tsx scripts/check-pilot-browser-isolated.ts",
     "check:backup": "tsx scripts/check-backup.ts",
     "check:release": "tsx scripts/check-release.ts",
-    "setup:organization": "tsx scripts/setup-organization.ts"
+    "setup:organization": "tsx scripts/setup-organization.ts",
+    "check:ui-shell": "tsx scripts/check-ui.ts shell"
   },
   "dependencies": {
+    "@fontsource/inter": "5.3.0",
     "argon2": "0.45.1",
     "dotenv": "18.0.8",
     "express": "5.3.0",

@@ -1,0 +1,10 @@
+import {escapeHtml as e,icon,type IconName} from '../lib/ui';
+export const tile=(title:string,content:string,options:{className?:string;tools?:string;attrs?:string}={})=>`<section class="b-tile ${options.className??''}" ${options.attrs??''}><header class="b-tile-heading"><h2>${e(title)}</h2>${options.tools??''}</header>${content}</section>`;
+export const pill=(label:string,accent=false)=>`<span class="b-pill${accent?' is-accent':''}">${e(label)}</span>`;
+export const chip=(label:string,attrs='',selected=false)=>`<button type="button" class="b-chip${selected?' is-selected':''}" aria-pressed="${selected}" ${attrs}>${e(label)}</button>`;
+export const avatar=(name:string,large=false)=>`<span class="b-avatar${large?' is-large':''}" aria-hidden="true">${e(name.split(/\s+/).filter(Boolean).slice(0,2).map(n=>n[0]).join('').toUpperCase())}</span>`;
+export const button=(label:string,options:{kind?:'primary'|'secondary'|'ghost';icon?:IconName;attrs?:string;href?:string}={})=>{const cls=`b-button b-button-${options.kind??'secondary'}`,content=(options.icon?icon(options.icon):'')+e(label);return options.href?`<a href="${e(options.href)}" data-link class="${cls}" ${options.attrs??''}>${content}</a>`:`<button type="button" class="${cls}" ${options.attrs??''}>${content}</button>`;};
+export const empty=(label:string)=>`<p class="b-empty">${e(label)}</p>`;
+export const skeleton=(rows=3)=>`<div class="b-skeleton" aria-hidden="true">${Array.from({length:rows},()=>'<span></span>').join('')}</div>`;
+export const stat=(label:string,value:number|null,context:string,delta?:number)=>`<div class="b-stat"><span>${e(label)}</span><div><strong${value!==null?' data-count="'+value+'"':''}>${value===null?'—':value.toLocaleString()}</strong>${delta===undefined?'':pill('+'+delta+' this month')}</div><small>${e(context)}</small></div>`;
+export const taskRow=(id:string,title:string,context:string,attrs='')=>`<label class="b-task-row"><input type="checkbox" aria-label="Complete ${e(title)}" data-task-check="${e(id)}" ${attrs}/><span><strong>${e(title)}</strong><small>${e(context)}</small></span></label>`;

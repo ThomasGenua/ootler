@@ -1,0 +1,17 @@
+/* Staff design tokens. Public pages retain their existing design system. */
+:is(.admin-body,.login-body,.staff-access-body) {
+  --canvas:#F4F4F5; --surface:#FFFFFF; --ink:#0A0A0B; --muted:#52525B;
+  --dim:#A1A1AA; --line:#E4E4E7; --dark-tile:#0A0A0B; --accent:#2563EB;
+  --soft:color-mix(in srgb,var(--canvas) 78%,var(--line));
+  --accent-soft:color-mix(in srgb,var(--accent) 8%,var(--surface));
+  --accent-line:color-mix(in srgb,var(--accent) 30%,var(--surface));
+  --on-dark:var(--surface); --dark-muted:var(--dim);
+  --dark-raised:color-mix(in srgb,var(--ink) 85%,var(--surface));
+  --scrim:color-mix(in srgb,var(--ink) 24%,transparent);
+  --shadow:0 1px 2px color-mix(in srgb,var(--ink) 5%,transparent),0 8px 24px -16px color-mix(in srgb,var(--ink) 20%,transparent);
+  --shadow-raised:0 2px 4px color-mix(in srgb,var(--ink) 7%,transparent),0 16px 32px -16px color-mix(in srgb,var(--ink) 25%,transparent);
+  --radius-tile:16px; --radius-card:10px; --radius-pill:999px;
+  --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px;
+  --font-ui:'Inter',system-ui,sans-serif; --ease:cubic-bezier(.2,.75,.2,1); --duration:180ms;
+  --rail-width:56px; --assistant-width:360px;
+}
