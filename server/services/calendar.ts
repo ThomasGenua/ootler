@@ -151,9 +151,16 @@ async function slotRows(c:PoolClient,u:Actor,i:z.infer<typeof calendarSlotsSchem
  return{...paged(slots.slice((i.page-1)*i.pageSize,i.page*i.pageSize),slots.length,i),timeZone:s.time_zone,durationMinutes:duration,notice:legacy?'A legacy viewing has unknown duration/assignment. Its property-local day is blocked; choose another date.':slots.length?null:'No slots meet the current staff availability and resource constraints.'};
 }
 export class Calendar{
- constructor(private readonly database:Database,private readonly config:ServerConfig){}
+ constructor(private readonly database:Database,private readonly config:ServerConfig,private readonly client?:PoolClient){}
+ private transaction<T>(run:(c:PoolClient)=>Promise<T>):Promise<T>{return this.client?run(this.client):this.database.transaction(run);}
+ async lockPrepared(user:Actor,requestKey:string,input:{kind:'book';propertyId:string;leadId:string;unitId:string|null;ownerMembershipId:string}|{kind:'reschedule';viewingId:string;ownerMembershipId:string}){return this.transaction(async c=>{
+  const raw=input.kind==='book'?{property_id:input.propertyId,lead_id:input.leadId,unit_id:input.unitId,owner_membership_id:null}:(await c.query('SELECT * FROM viewings WHERE id=$1 AND organization_id=$2',[input.viewingId,user.organization.id])).rows[0];if(!raw)missing();
+  const users=(await c.query('SELECT user_id FROM organization_memberships WHERE organization_id=$1 AND id=ANY($2::uuid[])',[user.organization.id,[raw.owner_membership_id,input.ownerMembershipId].filter(Boolean)])).rows;
+  await resources(c,['property:'+raw.property_id,'lead:'+raw.lead_id,...(raw.unit_id?['unit:'+raw.unit_id]:[]),...users.map(r=>'staff:'+r.user_id),'request:'+user.organization.id+':'+user.membershipId+':'+requestKey]);
+ });}
+
  async list(user:Actor,digest:string,i:z.infer<typeof calendarQuerySchema>):Promise<CalendarDirectory>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const u=await authorize(c,user,digest);if(i.propertyId)await property(c,u,i.propertyId);
    let date=i.date??localDate(new Date(),i.timeZone);
    if(i.view==='week')date=addLocalDays(date,-((weekday(date)+6)%7));
@@ -166,7 +173,7 @@ export class Calendar{
   });
  }
  async options(user:Actor,digest:string,i:z.infer<typeof calendarOptionsSchema>):Promise<CalendarOptions>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const u=await authorize(c,user,digest);
    let selected:Row|undefined;
    if(i.propertyId)selected=await property(c,u,i.propertyId);
@@ -187,9 +194,9 @@ export class Calendar{
     units:units.map(r=>({id:r.id,label:r.label})),unitTotal:units[0]?.total??0,access:{canManage:true,canConfigure:u.organization.role==='organization_admin'||u.permissions.includes('properties.manage'),canManageOwnAvailability:true}};
   });
  }
- async slots(user:Actor,digest:string,i:z.infer<typeof calendarSlotsSchema>):Promise<CalendarSlots>{return this.database.transaction(async c=>slotRows(c,await authorize(c,user,digest),i));}
+ async slots(user:Actor,digest:string,i:z.infer<typeof calendarSlotsSchema>):Promise<CalendarSlots>{return this.transaction(async c=>slotRows(c,await authorize(c,user,digest),i));}
  async detail(user:Actor,digest:string,id:string,p:Page):Promise<{viewing:CalendarViewing;events:Paginated<CalendarEvent>}>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const u=await authorize(c,user,digest),v=await actualViewing(c,u,id);
    const total=Number((await c.query('SELECT count(*) AS total FROM viewing_events WHERE organization_id=$1 AND viewing_id=$2',[u.organization.id,id])).rows[0].total);
    const rows=(await c.query('SELECT e.*,u.display_name AS actor_name FROM viewing_events e LEFT JOIN users u ON u.id=e.actor_user_id WHERE e.organization_id=$1 AND e.viewing_id=$2 ORDER BY e.occurred_at DESC,e.id LIMIT $3 OFFSET $4',[u.organization.id,id,p.pageSize,(p.page-1)*p.pageSize])).rows;
@@ -197,7 +204,7 @@ export class Calendar{
   });
  }
  async book(user:Actor,digest:string,i:z.infer<typeof calendarBookSchema>):Promise<{viewing:CalendarViewing}>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const raw=(await c.query('SELECT user_id FROM organization_memberships WHERE id=$1 AND organization_id=$2',[i.ownerMembershipId,user.organization.id])).rows[0];if(!raw)throw new ApiError(400,'INVALID_VIEWING_OWNER','Choose an eligible assigned agent.');
    await resources(c,['staff:'+raw.user_id,'property:'+i.propertyId,'lead:'+i.leadId,...(i.unitId?['unit:'+i.unitId]:[]),'request:'+user.organization.id+':'+user.membershipId+':'+i.requestKey]);
    const u=await authorize(c,user,digest);
@@ -206,7 +213,7 @@ export class Calendar{
   });
  }
  async reschedule(user:Actor,digest:string,id:string,i:z.infer<typeof calendarRescheduleSchema>):Promise<{viewing:CalendarViewing}>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const raw=(await c.query('SELECT * FROM viewings WHERE id=$1 AND organization_id=$2',[id,user.organization.id])).rows[0];if(!raw)missing();
    const users=(await c.query('SELECT user_id FROM organization_memberships WHERE organization_id=$1 AND id=ANY($2::uuid[])',[user.organization.id,[raw.owner_membership_id,i.ownerMembershipId].filter(Boolean)])).rows;
    await resources(c,['property:'+raw.property_id,'lead:'+raw.lead_id,...(raw.unit_id?['unit:'+raw.unit_id]:[]),...users.map(r=>'staff:'+r.user_id),'request:'+user.organization.id+':'+user.membershipId+':'+i.requestKey]);
@@ -228,7 +235,7 @@ export class Calendar{
   });
  }
  async status(user:Actor,digest:string,id:string,i:z.infer<typeof calendarStatusSchema>):Promise<{viewing:CalendarViewing}>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const raw=(await c.query('SELECT v.*,m.user_id FROM viewings v LEFT JOIN organization_memberships m ON m.id=v.owner_membership_id WHERE v.id=$1 AND v.organization_id=$2',[id,user.organization.id])).rows[0];if(!raw)missing();
    await resources(c,['property:'+raw.property_id,'lead:'+raw.lead_id,...(raw.unit_id?['unit:'+raw.unit_id]:[]),...(raw.user_id?['staff:'+raw.user_id]:[]),'request:'+user.organization.id+':'+user.membershipId+':'+i.requestKey]);
    const u=await authorize(c,user,digest),l=await context(c,u,raw.lead_id,raw.property_id,true);
@@ -246,7 +253,7 @@ export class Calendar{
   });
  }
  async configure(user:Actor,digest:string,propertyId:string,i:z.infer<typeof calendarSettingsSchema>):Promise<{settings:CalendarPropertySettings}>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    await resources(c,['property:'+propertyId]);const u=await authorize(c,user,digest);await property(c,u,propertyId);
    if(u.organization.role!=='organization_admin'&&!u.permissions.includes('properties.manage'))denied();
    const old=(await c.query('SELECT * FROM property_viewing_settings WHERE organization_id=$1 AND property_id=$2 FOR UPDATE',[u.organization.id,propertyId])).rows[0];
@@ -257,7 +264,7 @@ export class Calendar{
   });
  }
  async setAvailability(user:Actor,digest:string,propertyId:string,membershipId:string,i:z.infer<typeof calendarAvailabilitySchema>):Promise<{availability:CalendarAvailability}>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const raw=(await c.query('SELECT user_id FROM organization_memberships WHERE id=$1 AND organization_id=$2',[membershipId,user.organization.id])).rows[0];if(!raw)throw new ApiError(400,'INVALID_VIEWING_OWNER','Choose an eligible staff member.');
    await resources(c,['property:'+propertyId,'staff:'+raw.user_id]);const u=await authorize(c,user,digest);await property(c,u,propertyId);await owner(c,u,membershipId,propertyId);
    if(membershipId!==u.membershipId&&u.organization.role!=='organization_admin'&&!u.permissions.includes('properties.manage'))denied();
@@ -272,7 +279,7 @@ export class Calendar{
  }
 
  async invitations(user:Actor,digest:string,i:z.infer<typeof calendarInvitationQuerySchema>):Promise<Paginated<CalendarInvitation>>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const u=await authorize(c,user,digest);if(i.propertyId)await property(c,u,i.propertyId);
    if(i.leadId){const l=(await c.query('SELECT property_id FROM leads WHERE organization_id=$1 AND id=$2',[u.organization.id,i.leadId])).rows[0];if(!l)missing();await context(c,u,i.leadId,i.propertyId??l.property_id);}
    const where="v.organization_id=$1 AND "+propertyScope+" AND "+leadScope+" AND ($4::uuid IS NULL OR v.lead_id=$4) AND ($5::uuid IS NULL OR v.property_id=$5)";
@@ -284,7 +291,7 @@ export class Calendar{
   });
  }
  async invite(user:Actor,digest:string,i:z.infer<typeof calendarInvitationSchema>):Promise<CalendarIssuedInvitation>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const raw=(await c.query('SELECT user_id FROM organization_memberships WHERE organization_id=$1 AND id=$2',[user.organization.id,i.ownerMembershipId])).rows[0];if(!raw)throw new ApiError(400,'INVALID_VIEWING_OWNER','Choose an eligible agent.');
    await resources(c,['property:'+i.propertyId,'lead:'+i.leadId,'staff:'+raw.user_id,'request:'+user.organization.id+':'+user.membershipId+':'+i.requestKey]);
    const u=await authorize(c,user,digest),l=await context(c,u,i.leadId,i.propertyId,true),s=await settings(c,u.organization.id,i.propertyId);await owner(c,u,i.ownerMembershipId,i.propertyId,i.leadId);await availability(c,u.organization.id,i.propertyId,i.ownerMembershipId);
@@ -303,7 +310,7 @@ export class Calendar{
   });
  }
  async revoke(user:Actor,digest:string,id:string,requestKey:string):Promise<{invitation:CalendarInvitation}>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const raw=(await c.query('SELECT * FROM viewing_invitations WHERE id=$1 AND organization_id=$2',[id,user.organization.id])).rows[0];if(!raw)missing();
    await resources(c,['invitation:'+id,'lead:'+raw.lead_id,'property:'+raw.property_id,'request:'+user.organization.id+':'+user.membershipId+':'+requestKey]);
    const u=await authorize(c,user,digest);await context(c,u,raw.lead_id,raw.property_id,true);
@@ -334,7 +341,7 @@ export class Calendar{
   }catch{throw new ApiError(410,'INVITATION_UNAVAILABLE','This booking link is unavailable. Ask the property team for a new link.');}
  }
  async publicRead(i:z.infer<typeof publicCalendarReadSchema>):Promise<PublicCalendarInvitation>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const invitation=await this.invitation(c,i.token),policy=await this.invitationPolicy(c,invitation),s=policy.settings;
    if(invitation.booked_viewing_id){
     const v=(await c.query('SELECT * FROM viewings WHERE id=$1 AND organization_id=$2',[invitation.booked_viewing_id,invitation.organization_id])).rows[0];
@@ -355,7 +362,7 @@ export class Calendar{
  }
  private canManageBooking(invitation:Row,v:Row):boolean{return Boolean(v?.managed_by_ootla&&v.status==='scheduled'&&new Date(v.starts_at).getTime()>Date.now()+300000&&v.owner_membership_id===invitation.owner_membership_id&&v.unit_id===invitation.unit_id&&v.duration_minutes===invitation.duration_minutes);}
  private changeSlotKey(invitation:Row,v:Row,start:Date):string{return this.slotKey({...invitation,settings_version:String(invitation.settings_version)+':viewing:'+v.version},start);}
- async publicManage(i:z.infer<typeof publicCalendarManageSchema>){return this.database.transaction(async c=>{
+ async publicManage(i:z.infer<typeof publicCalendarManageSchema>){return this.transaction(async c=>{
   const initial=await this.invitation(c,i.token),staff=(await c.query('SELECT user_id FROM organization_memberships WHERE id=$1 AND organization_id=$2',[initial.owner_membership_id,initial.organization_id])).rows[0];
   if(!staff||!initial.booked_viewing_id)throw new ApiError(410,'INVITATION_UNAVAILABLE','This link has no available booking.');
   await resources(c,['invitation:'+initial.id,'lead:'+initial.lead_id,'property:'+initial.property_id,'staff:'+staff.user_id,...(initial.unit_id?['unit:'+initial.unit_id]:[]),'request:'+initial.organization_id+':public:'+initial.id+':'+i.requestKey]);
@@ -382,7 +389,7 @@ export class Calendar{
   return{updated:true};
  });}
  async publicBook(i:z.infer<typeof publicCalendarBookSchema>):Promise<PublicCalendarConfirmation>{
-  return this.database.transaction(async c=>{
+  return this.transaction(async c=>{
    const initial=await this.invitation(c,i.token),raw=(await c.query('SELECT user_id FROM organization_memberships WHERE id=$1 AND organization_id=$2',[initial.owner_membership_id,initial.organization_id])).rows[0];
    if(!raw)throw new ApiError(410,'INVITATION_UNAVAILABLE','This booking link is unavailable.');
    await resources(c,['invitation:'+initial.id,'lead:'+initial.lead_id,'property:'+initial.property_id,'staff:'+raw.user_id,...(initial.unit_id?['unit:'+initial.unit_id]:[]),'request:'+initial.organization_id+':public:'+initial.id+':'+i.requestKey]);
