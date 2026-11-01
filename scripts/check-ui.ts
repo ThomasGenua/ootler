@@ -1,3 +1,4 @@
+import {checkStaffPages} from './check-staff-pages.js';
 import {checkAssistant} from './check-assistant-ui.js';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
@@ -10,6 +11,7 @@ const mode=process.argv[2]??'shell',screens=path.resolve(import.meta.dirname,'..
 await mkdir(screens,{recursive:true});
 await withUiEnvironment(async fixture=>{
  const {page,base}=fixture;
+ if(mode==='pages'){await checkStaffPages(fixture,screens);return;}
  if(mode==='contracts'){const result=await promisify(execFile)(process.execPath,['node_modules/tsx/dist/cli.mjs','scripts/check-dashboard.ts'],{windowsHide:true,timeout:180000,env:{...process.env,DATABASE_URL:fixture.config.databaseUrl}});console.log(result.stdout);return;}
  if(mode==='public'){const result=await promisify(execFile)(process.execPath,['scripts/check-public-seo.mjs'],{windowsHide:true,timeout:180000,env:{...process.env,OOTLA_CHECK_URL:base}});console.log(result.stdout);return;}
  try{

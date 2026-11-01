@@ -84,7 +84,7 @@ try {
   await page.getByRole('button', { name: 'Fill demo credentials', exact: true }).click();
   await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'password');
   assert.equal(mutations.length, 0, 'Demo fill never authenticates.');
-  await page.getByRole('button', { name: /Sign in to your workspace/ }).click();
+  await page.getByRole('button', { name: /Sign in/ }).click();
   await expect(workspace()).toBeVisible(); signedIn = true;
   await expect(workspace().getByRole('heading', { name: 'Team tasks', exact: true })).toBeVisible();
   const tasks = await read('/api/tasks?view=team&pageSize=100');
@@ -229,9 +229,9 @@ try {
   pass('320/390/768/1586 responsive task, creation, routing and reminder pages; native labels and keyboard controls');
 
   phase = 'overview';
-  await page.goto(url('/admin')); await expect(page.locator('.admin-app')).toBeVisible();
-  assert.equal(await page.locator('.summary-metric').count(), 4, 'Overview retains exactly four approved metrics.');
-  assert((await page.locator('.followup-card').count()) <= 3, 'Only three actionable follow-up cards fit the overview.');
+  await page.goto(url('/admin')); await expect(page.locator('[data-staff-shell]')).toBeVisible();
+  assert.equal(await page.locator('.b-summary .b-stat').count(), 4, 'Overview retains exactly four approved metrics.');
+  await expect(page.locator('[data-pipeline]')).toBeVisible();
   await page.goto(url('/admin/tasks?view=team')); await expect(workspace()).toBeVisible();
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();

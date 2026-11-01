@@ -50,7 +50,7 @@ async function write(path, body, method = 'POST') {
   return response.json();
 }
 async function go(leadId, extra = '') {
-  const response = await page.goto(url('/admin/leads?lead=' + leadId + extra));
+  const response = await page.goto(url('/admin/leads?view=record&lead=' + leadId + extra));
   assert.equal(response?.status(), 200);
   await expect(workspace()).toBeVisible();
   await page.evaluate(() => document.fonts.ready);
@@ -76,7 +76,7 @@ try {
   await page.getByRole('button', { name: 'Fill demo credentials', exact: true }).click();
   await expect(page.getByLabel('Password', { exact: true })).toHaveAttribute('type', 'password');
   assert.equal(mutations.length, 0, 'Filling credentials never authenticates.');
-  await page.getByRole('button', { name: /Sign in to your workspace/ }).click();
+  await page.getByRole('button', { name: /Sign in/ }).click();
   await expect(page.locator('[data-lead-workspace]')).toBeVisible(); signedIn = true;
   const directory = await read('/api/leads?pageSize=25');
   const lead = directory.items.find(item => item.name === 'Maya Chen') ?? directory.items[0];
@@ -86,7 +86,7 @@ try {
   assert.equal(initial.leadDetail.lead.contactId, lead.contactId);
   assert.equal(initial.contact.contact.id, lead.contactId);
   for (const title of ['Contact & household','Private staff actions','Follow-up tasks','Private documents','Activity timeline','Contextual AI assistance','Property suggestions']) await expect(workspace().getByRole('heading', { name: title, exact: true })).toBeVisible();
-  await expect(workspace().getByText('Live AI not configured', { exact: true })).toBeVisible();
+  await expect(workspace().locator('.l08-notice').filter({hasText:'deterministic guidance from saved lead context'})).toBeVisible();
   await expect(workspace().getByText('No verified matches available.', { exact: true })).toBeVisible();
   await expect(page.locator('#lead-editor')).toBeAttached();
   await labels(); await timelineOrder();
@@ -233,8 +233,8 @@ try {
 
   phase = 'overview';
   await page.goto(url('/admin'));
-  await expect(page.locator('.summary-metric')).toHaveCount(4);
-  await expect(page.locator('.followup-card')).toHaveCount(3);
+  await expect(page.locator('.b-summary .b-stat')).toHaveCount(4);
+  await expect(page.locator('[data-pipeline]')).toBeVisible();
   assert.equal(await page.locator('[data-lead-workspace08]').count(), 0, 'Overview stays uncluttered.');
   await page.getByRole('button', { name: 'Account menu', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
@@ -246,7 +246,7 @@ try {
   assert.deepEqual(external, [], 'No external or outbound requests.');
   assert.deepEqual(legacyReads, [], 'Lead detail does not load the whole legacy demo data payload.');
   if (!mutate) assert(mutations.every(item => /^POST \/api\/auth\/(login|logout)$/.test(item)), 'Retained mode changes only its own normal session.');
-  pass('approved overview remains four metrics and three cards; normal logout denies workspace/documents; no outbound actions');
+  pass('Bento overview retains four metrics and pipeline; normal logout denies workspace/documents; no outbound actions');
   console.log('Stage 08 focused browser check: ' + groups + ' groups passed (' + (mutate ? 'owned scratch write mode' : 'retained-demo read-only mode') + ').');
 } finally {
   if (signedIn) { try { await page.request.post(url('/api/auth/logout'), { headers: { Origin: base.origin } }); } catch {} }

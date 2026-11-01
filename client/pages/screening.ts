@@ -1,3 +1,4 @@
+import {staffCopy} from '../lib/api';
 import type { ScreeningWorkspace, ScreeningConsent } from '../../shared/screening-contracts';
 import { escapeHtml as e } from '../lib/ui';
 
@@ -20,8 +21,8 @@ function reportUrl(value:string|null|undefined,applicationId:string,screeningId:
 export function screeningPanel(data:ScreeningWorkspace,applicationId:string):string {
  const demo=data.mode==='demo',access=data.access;
  return '<section class="ap-panel" data-screening-workspace data-application-id="'+e(applicationId)+'" aria-labelledby="screening-heading">'+
- '<div class="ap-list-heading"><h3 id="screening-heading">Screening and staff review</h3><span class="ap-tag '+(demo?'ap-amber':'')+'">'+(demo?'Demo adapter':'Not configured')+'</span></div>'+
- '<p class="ap-muted">'+e(data.notice)+'</p><p><strong>'+e(title(data.status))+'</strong></p>'+
+ '<div class="ap-list-heading"><h3 id="screening-heading">Screening and staff review</h3><span class="ap-tag '+(demo?'ap-amber':'')+'">'+(demo?'Demo adapter':'Not connected')+'</span></div>'+
+ '<p class="ap-muted">'+e(staffCopy(data.notice))+'</p><p><strong>'+e(title(data.status))+'</strong></p>'+
  '<p class="ap-message" data-screening-success role="status" hidden></p>'+
  '<ul class="ap-list">'+data.participants.map(person=>'<li class="ap-list-item"><div class="ap-list-heading"><div><h4>'+e(person.name)+'</h4><p class="ap-muted">'+e(person.role.replaceAll('_',' '))+'</p></div><span class="ap-tag">'+e(title(person.status))+'</span></div>'+
  '<p class="ap-muted">'+(person.consentAcceptedAt?'Separate screening consent recorded '+e(date(person.consentAcceptedAt))+'.':'Screening consent must be recorded by this applicant in their own portal. Application-information consent is separate.')+'</p>'+
@@ -29,7 +30,7 @@ export function screeningPanel(data:ScreeningWorkspace,applicationId:string):str
  (data.screenings.length?'<h4>Provider request history</h4><ul class="ap-list">'+data.screenings.map(screening=>{
   const download=access.canReadReports&&screening.reportAvailable?reportUrl(screening.reportUrl,applicationId,screening.id):null;
   return '<li class="ap-list-item"><div class="ap-list-heading"><span class="ap-tag">'+e(title(screening.status))+'</span><span class="ap-muted">Provider failures '+screening.attempts+' of '+screening.maxAttempts+'</span></div><p class="ap-muted">Updated '+e(date(screening.updatedAt))+'</p>'+
-  (screening.error?'<p class="ap-message ap-warning">'+e(screening.error)+'</p>':'')+
+  (screening.error?'<p class="ap-message ap-warning">'+e(staffCopy(screening.error))+'</p>':'')+
   (screening.nextAttemptAt?'<p class="ap-muted">Retry available after '+e(date(screening.nextAttemptAt))+'</p>':'')+
   (screening.reviewedAt?'<p class="ap-muted">Staff report review recorded '+e(date(screening.reviewedAt))+'</p>':'')+
   (download?'<p><a class="ap-button ap-small" href="'+e(download)+'">Download private demo report</a></p>':'')+'</li>';

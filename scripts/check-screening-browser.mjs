@@ -45,7 +45,7 @@ try{
  await go(staff,'/admin/login','#login-form');
  await staff.getByLabel('Email address',{exact:true}).fill(fixture.staffEmail);
  await staff.getByLabel('Password',{exact:true}).fill(fixture.staffPassword);
- await expect(staff.getByRole('button',{name:/Sign in to your workspace/})).toBeEnabled();await staff.getByRole('button',{name:/Sign in to your workspace/}) .click();await expect(staff).toHaveURL(url('/admin'));
+ await expect(staff.getByRole('button',{name:/Sign in/})).toBeEnabled();await staff.getByRole('button',{name:/Sign in/}) .click();await expect(staff).toHaveURL(url('/admin'));
  await go(staff,staffPath,'[data-screening-workspace]');
  const initial=await json(staff,staffApi+'/screening');assert.equal(initial.mode,'demo');assert.equal(initial.status,'consent_required');
  assert.equal(await staff.getByRole('button',{name:'Request demo screening',exact:true}).count(),0);

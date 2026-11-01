@@ -23,7 +23,7 @@ try{
  const anonymous=await page.request.get(url('/api/connectors/yardi/readiness'));assert.equal(anonymous.status(),401);
  await page.goto(url('/admin/integrations?view=yardi'));await expect(page).toHaveURL(/\/admin\/login\?returnTo=/);
  await page.getByRole('button',{name:'Fill demo credentials',exact:true}).click();assert.equal(writes.length,0);
- await page.getByRole('button',{name:/Sign in to your workspace/}).click();await expect(workspace().locator('[data-yardi-readiness]')).toBeVisible();
+ await page.getByRole('button',{name:/Sign in/}).click();await expect(workspace().locator('[data-yardi-readiness]')).toBeVisible();
  const initial=await read('/api/connectors'),readiness=await read('/api/connectors/yardi/readiness');
  assert.deepEqual(readiness.dimensions,{scaffoldingImplemented:true,mappingTested:false,credentialsConfigured:false,liveBehaviorVerified:false});
  for(const [key,value]of Object.entries(readiness.dimensions))await expect(workspace().locator('[data-readiness-dimension="'+key+'"]').first()).toHaveAttribute('data-ready',String(value));
@@ -60,7 +60,7 @@ try{
   pass('empty and populated draft checks stay unverified and unsaved, reject repeated scope IDs and report unsupported capabilities without external calls');
 
   staff=await browser.newContext();const staffPage=await staff.newPage();await staffPage.goto(url('/admin/login?returnTo=%2Fadmin%2Fintegrations%3Fview%3Dyardi'));
-  await staffPage.getByLabel('Email address',{exact:true}).fill('yardi-agent@example.test');await staffPage.getByLabel('Password',{exact:true}).fill('YardiAgent!2026');await expect(staffPage.getByRole('button',{name:/Sign in to your workspace/})).toBeEnabled();await staffPage.getByRole('button',{name:/Sign in to your workspace/}).click();
+  await staffPage.getByLabel('Email address',{exact:true}).fill('yardi-agent@example.test');await staffPage.getByLabel('Password',{exact:true}).fill('YardiAgent!2026');await expect(staffPage.getByRole('button',{name:/Sign in/})).toBeEnabled();await staffPage.getByRole('button',{name:/Sign in/}).click();
   await expect(staffPage.getByRole('heading',{name:'Organization administrator access required',exact:true})).toBeVisible();assert.equal(await staffPage.locator('[data-yardi-draft]').count(),0);
   assert.equal((await staffPage.request.get(url('/api/connectors/yardi/readiness'))).status(),403);assert.equal((await staffPage.request.post(url('/api/connectors/yardi/validate-config'),{headers:{Origin:base.origin},data:{}})).status(),403);
   await staffPage.request.post(url('/api/auth/logout'),{headers:{Origin:base.origin}});await staff.close();staff=undefined;
@@ -78,7 +78,7 @@ try{
  assert.equal(writes.length,before);assert.deepEqual(await read('/api/connectors'),initial);assert.deepEqual(await read('/api/connectors/yardi/readiness'),readiness);
  if(!owned)assert.equal(writes.filter(item=>item.includes('/api/connectors')).length,0);
  assert.deepEqual(errors,[]);assert.deepEqual(outside,[]);
- await page.getByRole('button',{name:'Account menu',exact:true}).click();await page.locator('#account-menu').getByRole('button',{name:'Sign out',exact:true}).click();await expect(page).toHaveURL(/\/admin\/login/);
+ await page.getByRole('button',{name:'Account menu',exact:true}).click();await page.locator('#b-account').getByRole('button',{name:'Sign out',exact:true}).click();await expect(page).toHaveURL(/\/admin\/login/);
  pass('existing simulator controls and five tabs remain available; navigation/refresh are read-only with no browser errors or external actions');
  console.log('Yardi readiness browser checks passed: '+groups+' groups ('+(owned?'owned isolated draft checks':'retained read-only')+').');
 }finally{await page.request.post(url('/api/auth/logout'),{headers:{Origin:base.origin}}).catch(()=>{});await staff?.close();await context.close();await browser.close();}
