@@ -1,3 +1,4 @@
+import {initializeStaffAssistant} from './lib/staff-assistant';
 import './operations.css';
 import { initializePhotoCredits } from './lib/photo-credits';
 import { applyRouteSeo } from './lib/seo';
@@ -189,7 +190,8 @@ async function render(moveFocus = false, focusSelector?: string): Promise<void> 
       const applications = path === '/admin/applications' ? await loadApplicationsWorkspace!(query, signal) : undefined;
       const foundation = path === '/admin/properties' || path === '/admin/contacts'
         ? await loadPropertyWorkspace!(path, query, signal) : undefined;
-      const leads = path === '/admin/leads' ? await loadLeadWorkspace!(query, signal) : undefined;
+      const directoryQuery=new URLSearchParams(query);if(directoryQuery.get('view')!=='record')directoryQuery.delete('lead');
+      const leads = path === '/admin/leads' ? await loadLeadWorkspace!(directoryQuery, signal) : undefined;
       const calendar = path === '/admin/calendar' ? await loadCalendarWorkspace!(query,signal) : undefined;
       const imports = path === '/admin/imports' ? await loadImportsWorkspace!(query, signal) : undefined;
       const connectors = path === '/admin/integrations' ? await loadConnectorWorkspace!(query, signal) : undefined;
@@ -206,6 +208,7 @@ async function render(moveFocus = false, focusSelector?: string): Promise<void> 
       if (signal.aborted || generation !== routeGeneration) return;
       app.innerHTML = adminShell(path, user, overview, false, demo, query, operations ?? pilot ?? (applications ? applicationsWorkspacePage!(applications, user, query) : calendar ? calendarWorkspacePage!(calendar,user,query) : accountPage ? accountWorkspacePage(accountPage, user, query) : connectors ? connectorWorkspacePage!(connectors, user, query) : imports ? importWorkspacePage!(imports, user, query) : foundation ? propertyWorkspacePage!(foundation, user, query) : leads ? leadWorkspacePage!(leads, user, query) : tasks ? taskWorkspacePage!(tasks, user, query) : path === '/admin/tasks' ? '<section class="card module-empty"><h2>Tasks are restricted to authorized staff</h2><p>Your current role does not grant access to private task details. Ask an organization administrator to review your permissions.</p></section>' : path === '/admin' ? dashboardPlaceholder() : undefined), reminders, pageSummary, headerCollapsed, notifications);
       initializeShell(signal,navigate);
+      initializeStaffAssistant(signal,user,navigate);
       if(path==='/admin')initializeBentoDashboard(signal,user,overview);
       if (operations) operationsModule!.initializeOperations(signal,navigate);
       if (pilot) initializePilot!(signal, navigate, user);

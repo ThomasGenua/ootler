@@ -76,7 +76,9 @@
     "check:release": "tsx scripts/check-release.ts",
     "setup:organization": "tsx scripts/setup-organization.ts",
     "check:ui-shell": "tsx scripts/check-ui.ts shell",
-    "check:dashboard:contracts": "tsx scripts/check-dashboard.ts"
+    "check:dashboard:contracts": "tsx scripts/check-dashboard.ts",
+    "check:ask-ootla": "tsx scripts/check-ui.ts ask",
+    "check:lead-drawer": "tsx scripts/check-ui.ts drawer"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",

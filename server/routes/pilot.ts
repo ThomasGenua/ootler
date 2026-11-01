@@ -1,3 +1,5 @@
+import {AssistantChat} from '../services/assistant-chat.js';
+import {chatRequestSchema,chatDecisionSchema} from '../../shared/assistant-chat-contracts.js';
 import { assistantRevisionSchema } from '../../shared/operations-contracts.js';
 import { Router, type Request, type Response, type RequestHandler } from 'express';
 import { z } from 'zod';
@@ -17,11 +19,20 @@ const actor=(r:Response)=>r.locals.user as AuthUser;
 const id=(v:unknown)=>parse(z.uuid(),v);
 function json<T>(r:Request,s:z.ZodType<T>):T{if(!r.is('application/json'))throw new ApiError(415,'JSON_REQUIRED','Send application/json.');return parse(s,r.body);}
 export function createPilotRouter(config:ServerConfig,database:Database,requireUser:RequestHandler){
- const router=Router(),assistant=new AssistantService(database,config),team=new TeamService(database,config);
+ const router=Router(),assistant=new AssistantService(database,config),team=new TeamService(database,config),chat=new AssistantChat(database,config);
  const digest=(r:Request)=>{const d=readSessionDigest(r,config);if(!d)throw new ApiError(401,'AUTH_REQUIRED','Sign in to your staff account.');return d;};
  router.use((r,s,next)=>{s.setHeader('Cache-Control','no-store, private');s.setHeader('Referrer-Policy','no-referrer');if(!['GET','HEAD','OPTIONS'].includes(r.method))return protectOrigin(config)(r,s,next);next();});
  router.post('/staff-access/accept',loginRateLimit(),async(r,s)=>s.json(await team.accept(json(r,acceptStaffSchema))));
  router.use(requireUser);
+ router.get('/assistant/chat',async(r,s)=>s.json(await chat.history(actor(s),digest(r))));
+ router.post('/assistant/chat/:id/decision',async(r,s)=>s.json(await chat.decide(actor(s),digest(r),id(r.params.id),json(r,chatDecisionSchema))));
+ router.post('/assistant/chat',async(r,s)=>{
+  const entry=await chat.generate(actor(s),digest(r),json(r,chatRequestSchema));
+  // Stream only validated output; the existing provider adapter returns a complete structured answer.
+  s.setHeader('Content-Type','application/x-ndjson; charset=utf-8');s.setHeader('X-Accel-Buffering','no');s.flushHeaders();
+  for(const text of entry.answer.match(/.{1,48}(?:\s|$)|.{1,48}/gs)??[])s.write(JSON.stringify({type:'text',text})+'\n');
+  s.end(JSON.stringify({type:'done',entry})+'\n');
+ });
  router.get('/assistant/status',async(r,s)=>s.json(await assistant.status(actor(s),digest(r))));
  router.post('/assistant/settings',async(r,s)=>{const input=json(r,z.object({enabled:z.boolean(),confirmed:z.literal(true)}).strict());s.json(await assistant.configure(actor(s),digest(r),input.enabled));});
  router.post('/assistant',async(r,s)=>s.json(await assistant.generate(actor(s),digest(r),json(r,assistantRequestSchema))));

@@ -1,3 +1,4 @@
+import {checkAssistant} from './check-assistant-ui.js';
 import {execFile} from 'node:child_process';
 import {promisify} from 'node:util';
 import assert from 'node:assert/strict';
@@ -12,8 +13,9 @@ await withUiEnvironment(async fixture=>{
  if(mode==='contracts'){const result=await promisify(execFile)(process.execPath,['node_modules/tsx/dist/cli.mjs','scripts/check-dashboard.ts'],{windowsHide:true,timeout:180000,env:{...process.env,DATABASE_URL:fixture.config.databaseUrl}});console.log(result.stdout);return;}
  if(mode==='public'){const result=await promisify(execFile)(process.execPath,['scripts/check-public-seo.mjs'],{windowsHide:true,timeout:180000,env:{...process.env,OOTLA_CHECK_URL:base}});console.log(result.stdout);return;}
  try{
-  if(mode==='dashboard'){const options=await (await fixture.context.request.get(base+'/api/leads/options')).json();const response=await fixture.context.request.post(base+'/api/leads',{headers:{Origin:base},data:{propertyId:options.properties[0].id,newContact:{displayName:'Bento Check Prospect',email:'bento@example.test'},intent:'leasing'}});assert.equal(response.status(),201);await fixture.database.query("UPDATE viewings SET starts_at=now()+interval '1 day',ends_at=CASE WHEN ends_at IS NULL THEN NULL ELSE now()+interval '1 day 30 minutes' END WHERE organization_id=$1",[fixture.organizationId]);}
+  if(['dashboard','ask','drawer'].includes(mode)){const options=await (await fixture.context.request.get(base+'/api/leads/options')).json();const response=await fixture.context.request.post(base+'/api/leads',{headers:{Origin:base},data:{propertyId:options.properties[0].id,newContact:{displayName:'Bento Check Prospect',email:'bento@example.test'},intent:'leasing'}});assert.equal(response.status(),201);await fixture.database.query("UPDATE viewings SET starts_at=now()+interval '1 day',ends_at=CASE WHEN ends_at IS NULL THEN NULL ELSE now()+interval '1 day 30 minutes' END WHERE organization_id=$1",[fixture.organizationId]);}
   await page.goto(base+'/admin');await expect(page.locator('[data-staff-shell]')).toBeVisible();await expect(page.getByRole('heading',{level:1})).toContainText('Demo');
+  if(mode==='ask'||mode==='drawer'){await expect(page.locator('[data-pipeline]')).toBeVisible();await checkAssistant(fixture,mode);await page.screenshot({path:path.join(screens,mode+'-1440x900.png'),fullPage:true});return;}
   if(mode==='dashboard'){
    await expect(page.locator('[data-pipeline]')).toBeVisible();await expect(page.locator('.b-summary .b-stat')).toHaveCount(4);
    const overview=await (await fixture.context.request.get(base+'/api/admin/overview')).json();

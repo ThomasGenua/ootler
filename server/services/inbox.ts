@@ -23,12 +23,14 @@ export class Inbox extends Operations {
 
  async listInbox(user:AuthUser,digest:string,q:string,page:number,status:string){return this.staff(user,digest,async(c,a)=>{
   const items=(await c.query(`SELECT co.*,ct.display_name,p.name AS property_name,u.display_name AS owner_name, EXISTS(SELECT 1 FROM conversation_messages m WHERE m.conversation_id=co.id AND m.direction='inbound' AND m.created_at>COALESCE(cr.read_at,'epoch')) AS unread,(SELECT count(*)::int FROM intake_submissions s WHERE s.lead_id=co.lead_id AND s.possible_duplicate) AS possible_duplicates,count(*) OVER()::int AS total FROM conversations co JOIN leads l ON l.id=co.lead_id JOIN contacts ct ON ct.id=l.contact_id JOIN properties p ON p.id=co.property_id LEFT JOIN conversation_reads cr ON cr.conversation_id=co.id AND cr.user_id=$6 LEFT JOIN organization_memberships om ON om.id=co.owner_membership_id LEFT JOIN users u ON u.id=om.user_id WHERE ${leadScope('co')} AND strpos(lower(ct.display_name||' '||ct.email),lower($4))>0 AND ($7='' OR co.status=$7) ORDER BY co.updated_at DESC,co.id LIMIT 25 OFFSET $5`,[...scopeArgs(a),q,(page-1)*25,a.id,status])).rows;
-  return{items,page,total:items[0]?.total??0,pageSize:25};
+  const unread=(await c.query(`SELECT count(*)::int AS n FROM conversations co LEFT JOIN conversation_reads cr ON cr.conversation_id=co.id AND cr.user_id=$4 WHERE ${leadScope('co')} AND EXISTS(SELECT 1 FROM conversation_messages m WHERE m.conversation_id=co.id AND m.direction='inbound' AND m.created_at>COALESCE(cr.read_at,'epoch'))`,[...scopeArgs(a),a.id])).rows[0].n;
+  return{items,page,total:items[0]?.total??0,pageSize:25,unread};
  });}
- async open(user:AuthUser,digest:string,leadId:string){return this.staff(user,digest,async(c,a)=>{
+ async open(user:AuthUser,digest:string,leadId:string){return this.staff(user,digest,(c,a)=>this.openLinked(c,a,leadId));}
+ async openLinked(c:PoolClient,a:AuthUser,leadId:string){
   const l=await new LeadWorkspaces(this.database).assertLeadAccess(a,leadId,c,true);
   return(await c.query('INSERT INTO conversations(organization_id,property_id,lead_id,owner_membership_id) VALUES($1,$2,$3,$4) ON CONFLICT(organization_id,lead_id) DO UPDATE SET lead_id=EXCLUDED.lead_id RETURNING id',[a.organization.id,l.property_id,l.id,l.owner_membership_id])).rows[0];
- });}
+ }
  async detail(user:AuthUser,digest:string,id:string,page:number){return this.staff(user,digest,async(c,a)=>{
   const conversation=await this.access(c,a,id);
   await c.query("UPDATE conversation_messages SET status='uncertain',updated_at=now() WHERE conversation_id=$1 AND status='sending' AND sent_at<now()-interval '2 minutes'",[id]);
@@ -44,10 +46,11 @@ export class Inbox extends Operations {
   await eligibleOwner(c,a.organization.id,input.ownerMembershipId,[row.property_id,...interests]);
   await c.query('UPDATE conversations SET owner_membership_id=$2,status=$3,version=version+1,updated_at=now() WHERE id=$1',[id,input.ownerMembershipId,input.status]);await operationEvent(c,a.organization.id,row.property_id,row.lead_id,a.id,'inbox.updated','Conversation ownership or status updated.');return{updated:true};
  });}
- async draft(user:AuthUser,digest:string,id:string,input:z.infer<typeof draftSchema>){return this.staff(user,digest,async(c,a)=>{
+ async draft(user:AuthUser,digest:string,id:string,input:z.infer<typeof draftSchema>){return this.staff(user,digest,(c,a)=>this.draftLinked(c,a,id,input));}
+ async draftLinked(c:PoolClient,a:AuthUser,id:string,input:z.infer<typeof draftSchema>){
   const co=await this.access(c,a,id,true);await assertComposer(c,a,id);const old=(await c.query('SELECT * FROM conversation_messages WHERE organization_id=$1 AND request_key=$2',[a.organization.id,input.requestKey])).rows[0];if(old){if(old.conversation_id!==id||old.channel!==input.channel||old.body!==input.body||old.subject!==input.subject)throw new ApiError(409,'REQUEST_CONFLICT','Use a new key for a different draft.');return old;}
   const row=(await c.query("INSERT INTO conversation_messages(organization_id,conversation_id,request_key,direction,channel,subject,body,status,created_by) VALUES($1,$2,$3,'outbound',$4,$5,$6,'draft',$7) RETURNING *",[a.organization.id,id,input.requestKey,input.channel,input.subject,input.body,a.id])).rows[0];await operationEvent(c,a.organization.id,co.property_id,co.lead_id,a.id,'inbox.draft','Reply draft saved.');return row;
- });}
+ }
  async editDraft(user:AuthUser,digest:string,id:string,messageId:string,input:z.infer<typeof editDraftSchema>){return this.staff(user,digest,async(c,a)=>{
   await this.access(c,a,id,true);await assertComposer(c,a,id);const row=(await c.query("UPDATE conversation_messages SET channel=$3,subject=$4,body=$5,version=version+1,updated_at=now() WHERE conversation_id=$1 AND id=$2 AND version=$6 AND status='draft' RETURNING *",[id,messageId,input.channel,input.subject,input.body,input.version])).rows[0];if(!row)throw stale();return row;
  });}

@@ -158,10 +158,10 @@ export class Calendar{
    let date=i.date??localDate(new Date(),i.timeZone);
    if(i.view==='week')date=addLocalDays(date,-((weekday(date)+6)%7));
    const end=addLocalDays(date,i.view==='day'?1:i.view==='week'?7:30),from=i.upcoming?new Date():localDayBounds(date,i.timeZone).from,until=i.upcoming?new Date('9999-12-31T00:00:00Z'):localDayBounds(end,i.timeZone).from;
-   const values=[u.organization.id,u.organization.role,u.membershipId,from,until,i.propertyId??null,i.ownerMembershipId??null,i.status];
-   const where="v.organization_id=$1 AND "+propertyScope+" AND "+leadScope+" AND v.starts_at<$5 AND ($11::boolean=false OR v.starts_at>=$4) AND ((v.managed_by_ootla AND v.ends_at>$4) OR (NOT v.managed_by_ootla AND v.starts_at>=$4)) AND ($6::uuid IS NULL OR v.property_id=$6) AND ($7::uuid IS NULL OR v.owner_membership_id=$7) AND ($8='all' OR v.status=$8)";
-   const total=Number((await c.query('SELECT count(*) AS total FROM viewings v'+viewingJoins+' WHERE '+where.replace('$11::boolean', '$9::boolean'),[...values,Boolean(i.upcoming)])).rows[0].total);
-   const rows=(await c.query('SELECT '+viewingColumns+' FROM viewings v'+viewingJoins+' WHERE '+where+' ORDER BY v.starts_at,v.id LIMIT $9 OFFSET $10',[...values,i.pageSize,(i.page-1)*i.pageSize,Boolean(i.upcoming)])).rows;
+   const values=[u.organization.id,u.organization.role,u.membershipId,from,until,i.propertyId??null,i.ownerMembershipId??null,i.status,i.leadId??null];
+   const where="v.organization_id=$1 AND "+propertyScope+" AND "+leadScope+" AND v.starts_at<$5 AND ($9::uuid IS NULL OR v.lead_id=$9) AND ($12::boolean=false OR v.starts_at>=$4) AND ((v.managed_by_ootla AND v.ends_at>$4) OR (NOT v.managed_by_ootla AND v.starts_at>=$4)) AND ($6::uuid IS NULL OR v.property_id=$6) AND ($7::uuid IS NULL OR v.owner_membership_id=$7) AND ($8='all' OR v.status=$8)";
+   const total=Number((await c.query('SELECT count(*) AS total FROM viewings v'+viewingJoins+' WHERE '+where.replace('$12::boolean', '$10::boolean'),[...values,Boolean(i.upcoming)])).rows[0].total);
+   const rows=(await c.query('SELECT '+viewingColumns+' FROM viewings v'+viewingJoins+' WHERE '+where+' ORDER BY v.starts_at,v.id LIMIT $10 OFFSET $11',[...values,i.pageSize,(i.page-1)*i.pageSize,Boolean(i.upcoming)])).rows;
    return{...paged(rows.map(viewingDto),total,i),range:{from:from.toISOString(),until:until.toISOString(),timeZone:i.timeZone,view:i.view},access:{canManage:true}};
   });
  }
