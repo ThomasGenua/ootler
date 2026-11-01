@@ -24,7 +24,7 @@
     "demo:reset": "tsx scripts/reset-demo.ts",
     "check:demo": "tsx scripts/check-demo.ts",
     "check:demo:restart": "node scripts/check-demo-restart.mjs",
-    "check:dashboard": "tsx scripts/check-dashboard.ts",
+    "check:dashboard": "tsx scripts/check-ui.ts dashboard",
     "check:homepage": "node scripts/check-homepage.mjs",
     "check:public-workflows": "node scripts/check-public-workflows.mjs",
     "check:public-platform": "node scripts/check-public-platform.mjs",
@@ -75,7 +75,8 @@
     "check:backup": "tsx scripts/check-backup.ts",
     "check:release": "tsx scripts/check-release.ts",
     "setup:organization": "tsx scripts/setup-organization.ts",
-    "check:ui-shell": "tsx scripts/check-ui.ts shell"
+    "check:ui-shell": "tsx scripts/check-ui.ts shell",
+    "check:dashboard:contracts": "tsx scripts/check-dashboard.ts"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",

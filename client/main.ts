@@ -41,7 +41,7 @@ import { initializeAccountWorkspace } from './lib/account';
 import type { AccountSnapshot } from '../shared/account-contracts';
 import type { TaskRecord, TaskReminder } from '../shared/task-contracts';
 import type { Paginated } from '../shared/property-contracts';
-import { persistentDashboardOverview } from './pages/dashboard';
+import {dashboardPlaceholder,initializeBentoDashboard} from './lib/bento-dashboard';
 import { initializeOnboardingDemo } from './lib/onboarding';
 import { initializeAiDemonstrations } from './lib/ai-demo';
 import { initializePublicWorkflow } from './lib/public-workflow';
@@ -199,13 +199,14 @@ async function render(moveFocus = false, focusSelector?: string): Promise<void> 
       const reminders = canManageTasks ? await api<Paginated<TaskReminder>>('/api/tasks/reminders?pageSize=5', { signal }) : undefined;
       const followupQuery = new URLSearchParams();
       for (const key of ['q', 'stages']) if (query.has(key)) followupQuery.set(key, query.get(key)!);
-      const followups = path === '/admin' ? (canManageTasks ? await api<{ items: TaskRecord[] }>(`/api/tasks/follow-ups?${followupQuery}`, { signal }) : { items: [] }) : undefined;
+      const followups = path === '/admin';
       const demo = !operations && !pilot && !applications && !calendar && !accountPage && !connectors && path !== '/admin/imports' && path !== '/admin/tasks' && !foundation && !leads && !followups && overview.demoEnabled && user.organization.role === 'organization_admin'
         ? await api<DemoData>('/api/demo/data', { signal })
         : undefined;
       if (signal.aborted || generation !== routeGeneration) return;
-      app.innerHTML = adminShell(path, user, overview, false, demo, query, operations ?? pilot ?? (applications ? applicationsWorkspacePage!(applications, user, query) : calendar ? calendarWorkspacePage!(calendar,user,query) : accountPage ? accountWorkspacePage(accountPage, user, query) : connectors ? connectorWorkspacePage!(connectors, user, query) : imports ? importWorkspacePage!(imports, user, query) : foundation ? propertyWorkspacePage!(foundation, user, query) : leads ? leadWorkspacePage!(leads, user, query) : tasks ? taskWorkspacePage!(tasks, user, query) : path === '/admin/tasks' ? '<section class="card module-empty"><h2>Tasks are restricted to authorized staff</h2><p>Your current role does not grant access to private task details. Ask an organization administrator to review your permissions.</p></section>' : followups ? persistentDashboardOverview(followups.items, Boolean(overview.demoEnabled)) : undefined), reminders, pageSummary, headerCollapsed, notifications);
+      app.innerHTML = adminShell(path, user, overview, false, demo, query, operations ?? pilot ?? (applications ? applicationsWorkspacePage!(applications, user, query) : calendar ? calendarWorkspacePage!(calendar,user,query) : accountPage ? accountWorkspacePage(accountPage, user, query) : connectors ? connectorWorkspacePage!(connectors, user, query) : imports ? importWorkspacePage!(imports, user, query) : foundation ? propertyWorkspacePage!(foundation, user, query) : leads ? leadWorkspacePage!(leads, user, query) : tasks ? taskWorkspacePage!(tasks, user, query) : path === '/admin/tasks' ? '<section class="card module-empty"><h2>Tasks are restricted to authorized staff</h2><p>Your current role does not grant access to private task details. Ask an organization administrator to review your permissions.</p></section>' : path === '/admin' ? dashboardPlaceholder() : undefined), reminders, pageSummary, headerCollapsed, notifications);
       initializeShell(signal,navigate);
+      if(path==='/admin')initializeBentoDashboard(signal,user,overview);
       if (operations) operationsModule!.initializeOperations(signal,navigate);
       if (pilot) initializePilot!(signal, navigate, user);
       if (applications) initializeApplicationsWorkspace!(signal,navigate,user);

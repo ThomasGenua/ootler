@@ -147,7 +147,7 @@ try {
     const overview = await response.json() as AdminOverview;
     assert.deepEqual(overview.dashboard, {
       period, timeZone: 'Africa/Lagos',
-      metrics: { newLeads: expected(leadFixtures, period), toursBooked: expected(viewingFixtures, period), applications: null, leasesSigned: null },
+      metrics: { newLeads: expected(leadFixtures, period), toursBooked: expected(viewingFixtures, period), applications: 0, leasesSigned: 0 },
     }, `Incorrect administrator metrics for ${period}.`);
     assert.deepEqual(overview.counts, { leads: 12, properties: 2, tasks: 0, applications: 0 }, 'Legacy count contracts must remain unchanged.');
     const scopedResponse = await api.request(`/api/organizations/${organizationIds[0]}/overview?period=${period}`, admin);
@@ -161,7 +161,7 @@ try {
     assert.equal(response.status, 200);
     const overview = await response.json() as AdminOverview;
     assert.deepEqual(overview.dashboard.metrics, {
-      newLeads: expected(leadFixtures, period, true), toursBooked: expected(viewingFixtures, period, true), applications: null, leasesSigned: null,
+      newLeads: expected(leadFixtures, period, true), toursBooked: expected(viewingFixtures, period, true), applications: 0, leasesSigned: 0,
     });
     assert.equal(overview.counts.leads, 6);
   }
@@ -187,17 +187,23 @@ try {
   try {
     if (ownsFixtures) {
       await database.transaction(async (client) => {
+        try{
         await client.query('DELETE FROM audit_events WHERE organization_id=ANY($1::uuid[]) OR actor_user_id=ANY($2::uuid[])', [organizationIds, userIds]);
         await client.query('DELETE FROM viewings WHERE organization_id=ANY($1::uuid[])', [organizationIds]);
+        await client.query('DELETE FROM lead_stage_observations WHERE organization_id=ANY($1::uuid[])',[organizationIds]);
         await client.query('DELETE FROM leads WHERE organization_id=ANY($1::uuid[])', [organizationIds]);
+        await client.query('DELETE FROM contact_property_links WHERE organization_id=ANY($1::uuid[])',[organizationIds]);
+        await client.query('DELETE FROM contacts WHERE organization_id=ANY($1::uuid[])',[organizationIds]);
+        await client.query('DELETE FROM properties WHERE organization_id=ANY($1::uuid[])',[organizationIds]);
         await client.query('DELETE FROM users WHERE id=ANY($1::uuid[])', [userIds]);
         await client.query('DELETE FROM organizations WHERE id=ANY($1::uuid[])', [organizationIds]);
+        }catch(error){console.error('Fixture constraint:',(error as {constraint?:string}).constraint,(error as {code?:string}).code);throw error;}
       });
       assert.equal((await database.query('SELECT id FROM organizations WHERE id=ANY($1::uuid[])', [organizationIds])).rowCount, 0);
     }
     if (before) assert.deepEqual(await snapshot(), before, 'Retained identities and portfolio records must remain unchanged.');
     pass('owned fixture cleanup preserves all retained identities, password hashes and portfolio records');
-  } catch { cleanupFailed = true; }
+  } catch(error) { console.error('Cleanup detail:',error instanceof Error?error.message.split('\n')[0]:'Unknown'); cleanupFailed = true; }
   await database.close();
   if (cleanupFailed) {
     console.error('FAIL Stage 04 dashboard fixture cleanup or preservation check.');
