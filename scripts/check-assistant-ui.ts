@@ -11,7 +11,12 @@ export async function checkAssistant(f:UiFixture,mode:string){
   await page.keyboard.press('Escape');await expect(page.locator('.b-lead-drawer')).toHaveCount(0);assert(!new URL(page.url()).searchParams.has('lead'));
   await page.goto(base+'/admin?lead='+id);await expect(page.locator('.b-lead-drawer>header h2')).toBeVisible();await page.keyboard.press('Escape');
   await page.keyboard.press('Control+k');await page.locator('#b-command-input').fill('Bento Check');await expect(page.locator('[data-command-lead]')).toBeVisible();await page.locator('[data-command-lead]').click();await expect(page.locator('.b-lead-drawer')).toBeVisible();
-  console.log('PASS lead drawer deep links, stage persistence, Escape, and command record search');return;
+  for(const route of ['/admin/ai?lead='+id,'/admin/calendar?view=book&lead='+id,'/admin/inbox?lead='+id]){
+   await page.goto(base+route);await expect(page.locator('[data-shell=clear-context]')).toContainText('Bento Check');await expect(page.locator('.b-lead-drawer')).toHaveCount(0);
+  }
+  await page.goto(base+'/admin/ai?lead='+id);await page.getByRole('link',{name:'Open lead record',exact:true}).click();await expect(page.locator('.b-lead-drawer')).toBeVisible();assert.equal(new URL(page.url()).searchParams.get('drawer'),'lead');
+  await page.reload();await expect(page.locator('.b-lead-drawer')).toBeVisible();await page.keyboard.press('Escape');assert.equal(new URL(page.url()).searchParams.get('lead'),id);assert(!new URL(page.url()).searchParams.has('drawer'));await expect(page.locator('[data-pilot-action=generate]')).toBeVisible();
+  console.log('PASS lead drawer deep links, stage persistence, Escape, command search and native lead-context routes');return;
  }
  const before=Number((await database.query('SELECT count(*) AS n FROM tasks WHERE organization_id=$1',[organizationId])).rows[0].n);
  const response=page.waitForResponse(r=>r.url().endsWith('/api/pilot/assistant/chat')&&r.request().method()==='POST');
