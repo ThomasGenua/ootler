@@ -290,7 +290,7 @@ export class Calendar{
    return paged(rows.map(invitationDto),total,i);
   });
  }
- async invite(user:Actor,digest:string,i:z.infer<typeof calendarInvitationSchema>):Promise<CalendarIssuedInvitation>{
+ async invite(user:Actor,digest:string,i:z.infer<typeof calendarInvitationSchema>,journeyToken?:string):Promise<CalendarIssuedInvitation>{
   return this.transaction(async c=>{
    const raw=(await c.query('SELECT user_id FROM organization_memberships WHERE organization_id=$1 AND id=$2',[user.organization.id,i.ownerMembershipId])).rows[0];if(!raw)throw new ApiError(400,'INVALID_VIEWING_OWNER','Choose an eligible agent.');
    await resources(c,['property:'+i.propertyId,'lead:'+i.leadId,'staff:'+raw.user_id,'request:'+user.organization.id+':'+user.membershipId+':'+i.requestKey]);
@@ -300,13 +300,14 @@ export class Calendar{
    if(i.unitId&&!(await c.query('SELECT id FROM units WHERE id=$1 AND organization_id=$2 AND property_id=$3',[i.unitId,u.organization.id,i.propertyId])).rowCount)throw new ApiError(400,'INVALID_UNIT','Choose a unit from this property.');
    let token:string|undefined;
    const result=await receipt(c,u,'staff:'+u.membershipId,i.requestKey,'invite',i,async()=>{
-    token=randomBytes(32).toString('hex');const hash=this.tokenDigest(token);
+    token=journeyToken??randomBytes(32).toString('hex');const hash=this.tokenDigest(token);
     const row=(await c.query('INSERT INTO viewing_invitations(organization_id,property_id,lead_id,unit_id,owner_membership_id,token_digest,settings_version,duration_minutes,expires_at,created_by_user_id,created_by_membership_id) VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11) RETURNING *',[u.organization.id,i.propertyId,i.leadId,i.unitId,i.ownerMembershipId,hash,s.version,i.durationMinutes??s.duration_minutes,new Date(Date.now()+i.expiresInHours*3600000),u.id,u.membershipId])).rows[0];
     await audit(c,u,'viewing.invitation_issued',{invitationId:row.id,propertyId:i.propertyId});return{invitationId:row.id};
    });
-   if(result.replayed||!token)conflict('This invitation was already issued. Its secret is returned only once; revoke it and create a new invitation if needed.','INVITATION_ALREADY_ISSUED');
+   if(!journeyToken&&(result.replayed||!token))conflict('This invitation was already issued. Its secret is returned only once; revoke it and create a new invitation if needed.','INVITATION_ALREADY_ISSUED');
    const row=(await c.query('SELECT * FROM viewing_invitations WHERE id=$1 AND organization_id=$2',[result.result.invitationId,u.organization.id])).rows[0];
-   return{invitation:invitationDto(row),token:token!,bookingPath:'/book#token='+token};
+   if(journeyToken&&row.token_digest!==this.tokenDigest(journeyToken))conflict('The invitation changed. Prepare a new journey.');
+   token=journeyToken??token;return{invitation:invitationDto(row),token:token!,bookingPath:'/book#token='+token};
   });
  }
  async revoke(user:Actor,digest:string,id:string,requestKey:string):Promise<{invitation:CalendarInvitation}>{

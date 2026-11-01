@@ -44,13 +44,13 @@ export class LeasingProductivity extends PropertyOperations {
  });}
  async workload(user:AuthUser,digest:string,q:Query){return this.staff(user,digest,async(c,a)=>{
   if(q.propertyId)await propertyAccess(c,a,q.propertyId);
-  const args=[...scopeArgs(a),q.propertyId??null],filter=(alias:string)=>` AND ($4::uuid IS NULL OR ${alias}.property_id=$4)`;
+  const args=[...scopeArgs(a),q.propertyId??null,q.owner==='me'?a.membershipId:null],filter=(alias:string)=>` AND ($4::uuid IS NULL OR ${alias}.property_id=$4) AND ($5::uuid IS NULL OR ${alias}.owner_membership_id=$5)`;
   const items=(await c.query(`WITH counts AS (
    SELECT l.owner_membership_id AS owner,'lead' AS kind,false AS overdue FROM leads l WHERE ${actualLeadScope('l')}${filter('l')} AND l.pipeline_stage NOT IN ('leased','won','lost_closed')
    UNION ALL SELECT t.owner_membership_id,'task',t.due_at<now() FROM tasks t WHERE ${leadScope('t')}${filter('t')} AND t.status='open'
    UNION ALL SELECT v.owner_membership_id,'tour',false FROM viewings v WHERE ${leadScope('v')}${filter('v')} AND v.status='scheduled' AND v.starts_at>=now() AND v.starts_at<now()+interval '7 days'
   ) SELECT owner AS membership_id,coalesce(u.display_name,'Unassigned') AS name,count(*) FILTER(WHERE kind='lead')::int AS leads,count(*) FILTER(WHERE kind='task')::int AS tasks,count(*) FILTER(WHERE overdue)::int AS overdue,count(*) FILTER(WHERE kind='tour')::int AS tours FROM counts LEFT JOIN organization_memberships m ON m.id=owner LEFT JOIN users u ON u.id=m.user_id GROUP BY owner,u.display_name ORDER BY count(*) FILTER(WHERE overdue) DESC,count(*) DESC,owner`,args)).rows;
-  const leads=(await c.query(`SELECT l.id,l.display_name,l.version,l.owner_membership_id,l.property_id,p.name AS property_name FROM leads l JOIN properties p ON p.id=l.property_id WHERE ${actualLeadScope('l')}${filter('l')} AND l.pipeline_stage NOT IN ('leased','won','lost_closed') AND strpos(lower(l.display_name),lower($5))>0 ORDER BY l.updated_at,l.id LIMIT 50 OFFSET $6`,[...args,q.q,(q.page-1)*50])).rows;
+  const leads=(await c.query(`SELECT l.id,l.display_name,l.version,l.owner_membership_id,l.property_id,p.name AS property_name FROM leads l JOIN properties p ON p.id=l.property_id WHERE ${actualLeadScope('l')}${filter('l')} AND l.pipeline_stage NOT IN ('leased','won','lost_closed') AND strpos(lower(l.display_name),lower($6))>0 ORDER BY l.updated_at,l.id LIMIT 50 OFFSET $7`,[...args,q.q,(q.page-1)*50])).rows;
   return{items,leads,page:q.page};
  });}
  async insights(user:AuthUser,digest:string,q:Query){return this.staff(user,digest,async(c,a)=>{

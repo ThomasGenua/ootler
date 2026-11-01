@@ -1,0 +1,6 @@
+import {createHash,createHmac,timingSafeEqual} from 'node:crypto';
+import {ApiError} from '../http/errors.js';
+export const fingerprint=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
+export function signWorkflow(secret:string,purpose:string,value:unknown){const body=Buffer.from(JSON.stringify(value)).toString('base64url');return body+'.'+createHmac('sha256',secret).update(purpose+':'+body).digest('hex');}
+export function readWorkflow<T>(secret:string,purpose:string,token:string):T{const [body,sig,...rest]=token.split('.'),expected=createHmac('sha256',secret).update(purpose+':'+body).digest('hex');if(rest.length||!sig||!/^[a-f0-9]{64}$/.test(sig)||!timingSafeEqual(Buffer.from(sig),Buffer.from(expected)))throw new ApiError(409,'PREVIEW_INVALID','Open a new preview before approving.');try{return JSON.parse(Buffer.from(body,'base64url').toString()) as T;}catch{throw new ApiError(409,'PREVIEW_INVALID','Open a new preview before approving.');}}
+export function reviewFingerprint(co:Record<string,any>,m:Record<string,any>){return fingerprint({conversation:co.id,lead:co.lead_id,contact:co.contact_id,recipient:m.channel==='email'?co.email:co.phone,status:co.status,message:m.id,version:m.version,channel:m.channel,subject:m.subject,body:m.body});}

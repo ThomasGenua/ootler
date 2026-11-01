@@ -1,3 +1,4 @@
+import {LeadRouting} from './lead-routing.js';
 import { createHmac, timingSafeEqual, randomUUID } from 'node:crypto';
 import type { z } from 'zod';
 import type { inquirySchema } from '../../shared/operations-contracts.js';
@@ -38,6 +39,7 @@ export class IntakeService {
    await c.query('INSERT INTO contact_property_links(organization_id,contact_id,property_id) VALUES($1,$2,$3)',[org,contact.id,form.property_id]);
    let owner=form.owner_membership_id;try{await eligibleOwner(c,org,owner,[form.property_id]);}catch(error){if(error instanceof ApiError)owner=null;else throw error;}
    const lead=(await c.query("INSERT INTO leads(organization_id,property_id,contact_id,display_name,email,status,intent,source,owner_membership_id,next_action) VALUES($1,$2,$3,$4,$5,'new','leasing','website',$6,'Review website inquiry') RETURNING id",[org,form.property_id,contact.id,payload.name,payload.email,owner])).rows[0];
+   if(!owner)owner=await new LeadRouting(this.database,this.config).intake(c,org,lead.id);
    const conversation=(await c.query('INSERT INTO conversations(organization_id,property_id,lead_id,owner_membership_id) VALUES($1,$2,$3,$4) RETURNING id',[org,form.property_id,lead.id,owner])).rows[0];
    await c.query("INSERT INTO conversation_messages(organization_id,conversation_id,request_key,direction,channel,body,status) VALUES($1,$2,$3,'inbound','web',$4,'received')",[org,conversation.id,randomUUID(),payload.message]);
    for(const channel of ['email','sms'])await c.query("INSERT INTO contact_communication_preferences(organization_id,contact_id,channel,allowed,evidence) VALUES($1,$2,$3,$4,'Public inquiry checkbox; identity not independently verified')",[org,contact.id,channel,channel==='email'||payload.smsConsent]);

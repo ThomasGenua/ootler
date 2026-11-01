@@ -1,3 +1,4 @@
+import {createWorkflowsRouter} from './routes/workflows.js';
 import {createProductivityRouter,createShortlistRouter} from './routes/productivity.js';
 import {createPropertyCollaborationRouter,createVendorWorkspaceRouter,createResidentDocumentsRouter} from './routes/property-collaboration.js';
 import {createPropertyOperationsRouter,createResidentWorkflowsRouter} from './routes/property-operations.js';
@@ -41,7 +42,7 @@ import { adminSummaryQuerySchema } from '../shared/admin-summary-contracts.js';
 import { loadAdminPageSummary } from './services/admin-summary.js';
 
 const frontendRoutes = new Set([
-  '/shortlist','/admin/tour-followup','/admin/shortlists','/admin/playbooks','/admin/sequences','/admin/workload','/admin/conversion',
+  '/applicant/journey','/shortlist','/admin/review-queue','/admin/lead-routing','/admin/sequence-reports','/admin/prospect-journeys','/admin/field','/admin/tour-followup','/admin/shortlists','/admin/playbooks','/admin/sequences','/admin/workload','/admin/conversion',
   '/vendor','/admin/vendor-work','/admin/inspections','/admin/notifications','/admin/resident-documents','/admin/property-insights','/inquire', '/resident', '/admin/maintenance','/admin/renewals','/admin/vacancies','/admin/duplicates','/admin/response-targets','/admin/attention', '/admin/intake', '/admin/inbox', '/admin/automations', '/admin/residents', '/admin/workspace', '/admin/knowledge', '/admin/reports',
   '/staff/access', '/admin/team', '/admin/onboarding',
   '/applicant', '/applicant/login', '/applicant/invite', '/payment-demo', '/book', '/', '/platform', '/ai-workflows', '/workflows/leasing', '/workflows/resident-support', '/integrations', '/contact', '/privacy', '/admin/login', '/admin',
@@ -212,6 +213,7 @@ export function createApp(config: ServerConfig, database: Database, options: { c
   app.use('/api/connectors', createConnectorRouter(config, database, requireUser));
   app.use('/api/imports', createImportRouter(config, database, requireUser));
   app.use('/api/public/intake',createIntakeRouter(config,database));
+  app.use('/api/workflows',express.json({limit:'128kb',strict:true}),createWorkflowsRouter(config,database,requireUser));
   app.use('/api/productivity',express.json({limit:'64kb',strict:true}),createProductivityRouter(config,database,requireUser));
   app.use('/api/public/shortlist',express.json({limit:'8kb',strict:true}),createShortlistRouter(config,database));
   app.use('/api/property-collaboration',createPropertyCollaborationRouter(config,database,requireUser));

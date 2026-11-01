@@ -11,6 +11,7 @@ import { LeadWorkspaces } from './lead-workspace.js';
 import { leadScope,scopeArgs,eligibleOwner,missing,stale,operationEvent,requireAdmin } from './operations-access.js';
 import { isIsolatedDemo } from './demo-environment.js';
 import { DeliveryError,sendCommunication } from './communication-transport.js';
+import {reviewFingerprint} from './workflow-signatures.js';
 
 export class Inbox extends Operations {
  async access(c:PoolClient,a:AuthUser,id:string,lock=false){
@@ -58,9 +59,10 @@ export class Inbox extends Operations {
   const co=await this.access(c,a,id,true);await c.query('INSERT INTO contact_communication_preferences(organization_id,contact_id,channel,allowed,evidence,updated_by) VALUES($1,$2,$3,$4,$5,$6) ON CONFLICT(organization_id,contact_id,channel) DO UPDATE SET allowed=$4,evidence=$5,updated_by=$6,updated_at=now()',[a.organization.id,co.contact_id,input.channel,input.allowed,input.evidence,a.id]);await operationEvent(c,a.organization.id,co.property_id,co.lead_id,a.id,'inbox.preference','Contact communication preference updated.');return{saved:true};
  });}
  replyAddress(conversationId:string){const token=createHmac('sha256',this.config.sessionSecret).update('email-reply:'+conversationId).digest('hex').slice(0,24);return'reply+'+conversationId.replaceAll('-','')+'.'+token+'@'+this.config.communications.replyDomain;}
- async send(user:AuthUser,digest:string,id:string,messageId:string,version:number,fetcher:typeof fetch=fetch){
+ async send(user:AuthUser,digest:string,id:string,messageId:string,version:number,fetcher:typeof fetch=fetch,expectedReview?:string){
   const prepared=await this.staff(user,digest,async(c,a)=>{
    const co=await this.access(c,a,id,true);const m=(await c.query('SELECT * FROM conversation_messages WHERE conversation_id=$1 AND id=$2 FOR UPDATE',[id,messageId])).rows[0];if(!m)throw missing();if(m.status!=='draft')return{existing:m};if(m.version!==version)throw stale();await assertComposer(c,a,id);
+   if(expectedReview){const contact=(await c.query('SELECT email,phone FROM contacts WHERE id=$1 AND organization_id=$2 FOR SHARE',[co.contact_id,a.organization.id])).rows[0];Object.assign(co,contact);if(reviewFingerprint(co,m)!==expectedReview)throw new ApiError(409,'REVIEW_CHANGED','The recipient or reply changed. Open a fresh preview.');}
    if(m.tour_id&&!(await c.query('SELECT id FROM viewings WHERE id=$1 AND organization_id=$2 AND version=$3 FOR SHARE',[m.tour_id,a.organization.id,m.tour_version])).rowCount)throw new ApiError(409,'TOUR_CHANGED','This tour changed after the draft was prepared. Review its current details and prepare a new reply.');
    await assertPropertyDraftCurrent(c,messageId);
    if(co.status==='closed')throw new ApiError(409,'CONVERSATION_CLOSED','Reopen the conversation before sending.');
