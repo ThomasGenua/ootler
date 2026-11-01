@@ -80,7 +80,9 @@
     "check:ask-ootla": "tsx scripts/check-ui.ts ask",
     "check:lead-drawer": "tsx scripts/check-ui.ts drawer",
     "check:admin-pages": "tsx scripts/check-ui.ts pages",
-    "check:public-ui": "tsx scripts/check-ui.ts public"
+    "check:public-ui": "tsx scripts/check-ui.ts public",
+    "check:productivity": "tsx scripts/check-productivity.ts",
+    "sequences:process": "tsx scripts/process-followup-sequences.ts"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",

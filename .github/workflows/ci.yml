@@ -12,7 +12,7 @@ concurrency:
 jobs:
   features:
     runs-on: windows-2025
-    timeout-minutes: 25
+    timeout-minutes: 35
     defaults:
       run:
         shell: pwsh
@@ -52,6 +52,8 @@ jobs:
         run: npm run check:operations-browser
       - name: Bento dashboard, assistant approvals, staff pages and public regressions
         run: npm run check:browser
+      - name: Leasing productivity, reviewed actions, private shortlists and file scanning
+        run: npm run check:productivity
       - name: Stop the owned test cluster
         if: always()
         run: npm run db:local:stop
