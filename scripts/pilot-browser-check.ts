@@ -3,7 +3,9 @@ import path from 'node:path';
 import {mkdir} from 'node:fs/promises';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'vite';
-import {chromium,expect} from '@playwright/test';
+import {chromium,expect as browserExpect} from '@playwright/test';
+// Cold CI module loads and route refreshes can exceed Playwright's five-second assertion default.
+const expect=browserExpect.configure({timeout:15000});
 import type {ServerConfig} from '../server/config/env.js';
 export async function checkPilotBrowser(input:{base:string;cookie:string;leadId:string;password:string;config:ServerConfig}){
  const root=path.resolve(import.meta.dirname,'..');

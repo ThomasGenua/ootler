@@ -1,0 +1,18 @@
+import {z} from 'zod';
+export const aiRequest = z.object({requestKey:z.uuid(),confirmed:z.literal(true)}).strict();
+export const aiSettingsSchema = z.object({version:z.number().int().min(0),conciergeEnabled:z.boolean(),websiteOrigins:z.array(z.url().refine(v=>{const u=new URL(v);return u.protocol==='https:'&&u.origin===v&&!u.username&&!u.password;})).max(5)}).strict();
+export const knowledgeTextSchema = aiRequest.extend({propertyId:z.uuid(),name:z.string().trim().min(1).max(160),text:z.string().trim().min(20).max(40000),sourceUrl:z.union([z.literal(''),z.url()]).default('')}).strict();
+export const knowledgeWebsiteSchema = aiRequest.extend({propertyId:z.uuid(),url:z.url().max(2000)}).strict();
+export const knowledgeUploadQuery = z.object({propertyId:z.uuid(),requestKey:z.uuid(),name:z.string().trim().min(1).max(160),confirmed:z.literal('true')}).strict();
+export const knowledgeFact = z.object({title:z.string().min(1).max(160),body:z.string().min(1).max(6000),quote:z.string().min(1).max(1200),page:z.number().int().min(1).max(2000)}).strict();
+export const knowledgeResult = z.object({facts:z.array(knowledgeFact).max(12),warnings:z.array(z.string().max(500)).max(10)}).strict();
+export const knowledgeReview = z.object({version:z.number().int().positive(),confirmed:z.literal(true),facts:z.array(z.object({index:z.number().int().min(0).max(11),title:z.string().trim().min(1).max(160),body:z.string().trim().min(1).max(6000)}).strict()).min(1).max(12).refine(v=>new Set(v.map(x=>x.index)).size===v.length)}).strict();
+export const knowledgePublication = z.object({version:z.number().int().positive(),published:z.boolean(),publicAnswer:z.boolean(),expiresAt:z.iso.datetime({offset:true}).nullable(),confirmed:z.literal(true)}).strict();
+export const conciergeQuestion = z.object({requestKey:z.uuid(),question:z.string().trim().min(2).max(1000),token:z.string().regex(/^[a-f0-9]{64}$/),confirmed:z.literal(true)}).strict();
+export const conciergeStart = z.object({challenge:z.string().max(200),website:z.literal('').default('')}).strict();
+export const groundedAnswer = z.object({answer:z.string().max(3000),sourceIds:z.array(z.string().max(80)).max(12),needsHuman:z.boolean()}).strict();
+export const documentResult = z.object({fields:z.array(z.object({field:z.enum(['displayName','phone','currentAddress','moveInDate']),value:z.string().max(1000),quote:z.string().min(1).max(1200),page:z.number().int().min(1).max(2000)}).strict()).max(4).refine(v=>new Set(v.map(x=>x.field)).size===v.length),warnings:z.array(z.string().max(500)).max(10)}).strict();
+export const briefingQuery = z.object({owner:z.enum(['mine','all']).default('mine'),propertyId:z.uuid().optional()}).strict();
+export const briefingRequest = aiRequest.extend(briefingQuery.shape).strict();
+export const briefingResult = z.object({summary:z.string().max(2000),priorities:z.array(z.object({sourceId:z.string().max(80),reason:z.string().max(600)}).strict()).max(8)}).strict();
+export const feedbackSchema = z.object({feedback:z.enum(['accepted','edited','dismissed'])}).strict();

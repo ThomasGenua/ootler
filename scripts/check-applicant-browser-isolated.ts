@@ -26,7 +26,7 @@ const config={...source,nodeEnv:'test' as const,production:false,databaseUrl:scr
 const database=new Database(config),normalize=(value:string)=>path.resolve(value).replaceAll('\\','/').toLowerCase();
 let owned=false,connected=false,api:ReturnType<ReturnType<typeof createApp>['listen']>|undefined,web:Awaited<ReturnType<typeof createServer>>|undefined;
 try{
- assert.equal(createHash('sha256').update(await readFile(path.join(root,'migrations/013_applicant_portal.sql'))).digest('hex'),'7233fdcc29a4a80edc19e437235dad0feb5f5d48cc1a4f5aad5c6ad06cba10a6');
+ assert.equal(createHash('sha256').update((await readFile(path.join(root,'migrations/013_applicant_portal.sql'),'utf8')).replaceAll('\r\n','\n')).digest('hex'),'7233fdcc29a4a80edc19e437235dad0feb5f5d48cc1a4f5aad5c6ad06cba10a6');
  await owner.connect();connected=true;
  assert.equal(normalize((await owner.query('SHOW data_directory')).rows[0].data_directory),normalize(path.join(root,'.local/postgres/data')));
  const role=(await owner.query('SELECT rolsuper,rolcreatedb,rolcreaterole FROM pg_roles WHERE rolname=$1',['ootla'])).rows[0];

@@ -56,6 +56,10 @@ jobs:
         run: npm run check:productivity
       - name: Batch review, prospect journeys, routing, reports and mobile recovery
         run: npm run check:connected-workflows
+      - name: Applicant upload, submission, invitations and accessibility
+        run: npm run check:applicant-browser
+      - name: Knowledge imports, concierge, document assistance and daily briefings
+        run: npm run check:ai-workflows
       - name: Stop the owned test cluster
         if: always()
         run: npm run db:local:stop

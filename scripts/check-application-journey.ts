@@ -123,6 +123,7 @@ async function main(){
   await checkLeaseBrowser({base:api.base,cookie:admin,applicationId:appId,config});return;
  }
  if(process.env.OOTLA_JOURNEY_BROWSER==='pilot'){
+  phase='assistant, team, onboarding and analytics browser journeys';
   await submittedPortal(context);
   const {checkPilotBrowser}=await import('./pilot-browser-check.js');
   await checkPilotBrowser({base:api.base,cookie:admin,leadId:leadIds[0]!,password,config});return;
@@ -577,7 +578,7 @@ async function checkAi(c:Context){
  pass('operator provisioning creates an individual admin and empty standalone organization, supports normal sign-in, and refuses duplicate identity takeover or demo seeding');
 }
 try{await main();}
-catch(error){const detail=error instanceof assert.AssertionError?error.message.split(/\r?\n/,1)[0]:JSON.stringify({name:error instanceof Error?error.name:'unknown',code:(error as{code?:string})?.code});console.error('Journey checks failed during '+phase+': '+detail);console.error('Check location: '+(error instanceof Error?error.stack?.split(/\r?\n/).find(l=>l.includes('check-application-journey.ts'))?.trim():'unknown'));process.exitCode=1;}
+catch(error){const detail=error instanceof assert.AssertionError?error.message.split(/\r?\n/,1)[0]:JSON.stringify({name:error instanceof Error?error.name:'unknown',code:(error as{code?:string})?.code});console.error('Journey checks failed during '+phase+': '+detail);console.error('Check location: '+(error instanceof Error?error.stack?.split(/\r?\n/).find(l=>/scripts[\\/][a-z-]+\.ts:\d+/.test(l))?.trim():'unknown'));process.exitCode=1;}
 finally{
  try{
   for(const close of servers.reverse())await close();await database.close();

@@ -179,7 +179,7 @@ try{
    await go(target,path,selector);await labels(target,selector);
    assert(await target.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),name+' fits '+width+'px');
    assert(await target.evaluate(()=>matchMedia('(prefers-reduced-motion: reduce)').matches));
-   assert.equal(await target.locator('.wordmark .brand-roof').first().evaluate(element=>getComputedStyle(element).animationName),'none');
+   assert.equal(await target.locator(name==='applications'?'.b-rail-brand':'.wordmark .brand-roof').first().evaluate(element=>getComputedStyle(element).animationName),'none');
    if([390,1586].includes(width)&&name!=='invited-applicant')await target.screenshot({path:'.local/screenshots/'+name+'-'+width+'-isolated.png',fullPage:true});
   }
  }

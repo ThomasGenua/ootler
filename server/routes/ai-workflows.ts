@@ -1,0 +1,50 @@
+import {Router,raw,type Request,type Response,type RequestHandler} from 'express';
+import {z} from 'zod';
+import type {AuthUser} from '../../shared/contracts.js';
+import * as schemas from '../../shared/ai-workflow-contracts.js';
+import {inquirySchema} from '../../shared/operations-contracts.js';
+import type {Database} from '../db/pool.js';
+import type {ServerConfig} from '../config/env.js';
+import {ApiError} from '../http/errors.js';
+import {readSessionDigest} from '../services/sessions.js';
+import {protectOrigin} from '../middleware/security.js';
+import {AiKnowledge} from '../services/ai-knowledge.js';
+import {AiBriefing} from '../services/ai-briefing.js';
+import {LeasingConcierge} from '../services/leasing-concierge.js';
+import {ApplicationDocumentAssistant} from '../services/application-document-assistant.js';
+import {ApplicantPortal,type ApplicantPrincipal} from '../services/applicant-portal.js';
+const parse=<T>(schema:z.ZodType<T>,value:unknown):T=>{const r=schema.safeParse(value);if(!r.success)throw new ApiError(400,'INVALID_INPUT','Check the supplied fields.');return r.data;};
+const id=(value:unknown)=>parse(z.uuid(),value);
+const json=<T>(r:Request,schema:z.ZodType<T>)=>{if(!r.is('application/json'))throw new ApiError(415,'JSON_REQUIRED','Send application/json.');return parse(schema,r.body);};
+export function createAiWorkflowRouter(config:ServerConfig,database:Database,requireUser:RequestHandler){
+ const router=Router(),knowledge=new AiKnowledge(database,config),brief=new AiBriefing(database,config),concierge=new LeasingConcierge(database,config);
+ const actor=(s:Response)=>s.locals.user as AuthUser,digest=(r:Request)=>{const d=readSessionDigest(r,config);if(!d)throw new ApiError(401,'AUTH_REQUIRED','Sign in again.');return d;};
+ router.use(requireUser,(r,s,next)=>{s.setHeader('Cache-Control','no-store, private');s.setHeader('Referrer-Policy','no-referrer');if(r.method!=='GET')return protectOrigin(config)(r,s,next);next();});
+ router.get('/properties/:id/settings',async(r,s)=>s.json(await knowledge.settings(actor(s),digest(r),id(r.params.id))));
+ router.post('/properties/:id/settings',async(r,s)=>s.json(await knowledge.configure(actor(s),digest(r),id(r.params.id),json(r,schemas.aiSettingsSchema))));
+ router.get('/knowledge',async(r,s)=>s.json(await knowledge.directory(actor(s),digest(r),parse(z.object({propertyId:z.uuid()}).strict(),r.query).propertyId)));
+ router.post('/knowledge/text',async(r,s)=>{const i=json(r,schemas.knowledgeTextSchema);s.json(await knowledge.ingest(actor(s),digest(r),i.propertyId,i.requestKey,{name:i.name.endsWith('.txt')?i.name:i.name+'.txt',type:'text/plain',content:Buffer.from(i.text)},i.sourceUrl));});
+ router.post('/knowledge/website',async(r,s)=>{const i=json(r,schemas.knowledgeWebsiteSchema);s.json(await knowledge.website(actor(s),digest(r),i.propertyId,i.requestKey,i.url));});
+ router.post('/knowledge/file',raw({type:['application/pdf','image/png','image/jpeg','text/plain'],limit:'6mb',inflate:false}),async(r,s)=>{const i=parse(schemas.knowledgeUploadQuery,r.query);s.json(await knowledge.ingest(actor(s),digest(r),i.propertyId,i.requestKey,{name:i.name,type:r.get('content-type')?.split(';')[0]??'',content:r.body}));});
+ router.post('/knowledge/imports/:id/review',async(r,s)=>s.json(await knowledge.review(actor(s),digest(r),id(r.params.id),json(r,schemas.knowledgeReview))));
+ router.get('/knowledge/imports/:id/source',async(r,s)=>{const file=await knowledge.source(actor(s),digest(r),id(r.params.id));s.setHeader('Content-Disposition',"attachment; filename*=UTF-8''"+encodeURIComponent(file.name));s.type(file.media_type).send(file.content);});
+ router.post('/knowledge/:id/publication',async(r,s)=>s.json(await knowledge.publish(actor(s),digest(r),id(r.params.id),json(r,schemas.knowledgePublication))));
+ router.get('/knowledge/:id/versions',async(r,s)=>s.json(await knowledge.versions(actor(s),digest(r),id(r.params.id))));
+ router.post('/knowledge/gaps/:id/resolve',async(r,s)=>{json(r,z.object({confirmed:z.literal(true)}).strict());s.json(await knowledge.resolveGap(actor(s),digest(r),id(r.params.id)));});
+ router.get('/briefing',async(r,s)=>s.json(await brief.facts(actor(s),digest(r),parse(schemas.briefingQuery,r.query))));
+ router.post('/briefing',async(r,s)=>{const i=json(r,schemas.briefingRequest);s.json(await brief.generate(actor(s),digest(r),{owner:i.owner,propertyId:i.propertyId},i.requestKey));});
+ router.post('/reply/:id',async(r,s)=>s.json(await concierge.reply(actor(s),digest(r),id(r.params.id),json(r,schemas.aiRequest).requestKey)));
+ router.post('/runs/:id/feedback',async(r,s)=>s.json(await brief.feedback(actor(s),digest(r),id(r.params.id),json(r,schemas.feedbackSchema).feedback)));
+ router.get('/usage',async(r,s)=>s.json(await brief.usage(actor(s),digest(r))));
+ return router;
+}
+export function createConciergeRouter(config:ServerConfig,database:Database){const router=Router(),service=new LeasingConcierge(database,config);router.use((r,s,next)=>{s.setHeader('Cache-Control','no-store');s.setHeader('Referrer-Policy','no-referrer');if(r.method!=='GET')return protectOrigin(config)(r,s,next);next();});
+ router.get('/:id',async(r,s)=>s.json(await service.info(id(r.params.id))));
+ router.post('/:id/start',async(r,s)=>s.json(await service.start(id(r.params.id),json(r,schemas.conciergeStart).challenge,r.ip??'unknown')));
+ router.post('/:id/ask',async(r,s)=>s.json(await service.ask(id(r.params.id),json(r,schemas.conciergeQuestion))));
+ router.post('/:id/handoff',async(r,s)=>{const i=json(r,z.object({token:z.string().regex(/^[a-f0-9]{64}$/),inquiry:inquirySchema}).strict());s.json(await service.handoff(id(r.params.id),i.token,i.inquiry,r.ip??'unknown'));});return router;
+}
+export function createDocumentAssistantRouter(config:ServerConfig,database:Database){const router=Router(),portal=new ApplicantPortal(database,config),service=new ApplicationDocumentAssistant(database,config);router.use(async(r,s,next)=>{s.setHeader('Cache-Control','no-store, private');s.setHeader('Referrer-Policy','no-referrer');const u=await portal.currentUser(r);if(!u)throw new ApiError(401,'APPLICANT_AUTH_REQUIRED','Sign in to your application.');s.locals.applicant=u;if(r.method!=='GET')return protectOrigin(config)(r,s,next);next();});
+ router.post('/:applicationId/documents/:documentId',async(r,s)=>s.json(await service.extract(s.locals.applicant as ApplicantPrincipal,id(r.params.applicationId),id(r.params.documentId),json(r,schemas.aiRequest).requestKey)));
+ router.post('/:applicationId/reviews/:runId',async(r,s)=>{const i=json(r,z.object({version:z.number().int().positive(),fields:z.array(z.enum(['displayName','phone','currentAddress','moveInDate'])).min(1).max(4),confirmed:z.literal(true)}).strict());s.json(await service.review(s.locals.applicant as ApplicantPrincipal,id(r.params.applicationId),id(r.params.runId),i.fields,i.version));});return router;
+}

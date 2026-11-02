@@ -1,3 +1,4 @@
+import {initializeDocumentAssistant} from './document-assistant';
 import { api, ApiError, errorMessage } from './api';
 import { applicantErrorPage, applicantInvitationPage, applicantLoginPage } from '../pages/applicant';
 import type { ScreeningConsent } from '../../shared/screening-contracts';
@@ -92,6 +93,7 @@ export async function uploadApplicantDocument(endpoint:string,file:File,signal:A
  if(!response.ok){let message='The document could not be uploaded.';try{const body=await response.json()as{error?:string|{message?:string}};message=typeof body.error==='string'?body.error:body.error?.message??message;}catch{}throw new ApiError(response.status,message);}
 }
 export function initializeApplicantWorkspace(signal:AbortSignal,navigate:ApplicantNavigate):void{
+ initializeDocumentAssistant(signal);
  initializeScreeningConsent(signal,navigate);
  initializePaymentWorkspace(signal,navigate);
  const workspace=document.querySelector<HTMLElement>('[data-applicant-workspace]');
