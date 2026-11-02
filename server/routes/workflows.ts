@@ -1,0 +1,36 @@
+import {Router,type Request,type Response,type RequestHandler} from 'express';
+import {z} from 'zod';
+import * as S from '../../shared/workflow-contracts.js';
+import {productivityQuery} from '../../shared/productivity-contracts.js';
+import type {AuthUser} from '../../shared/contracts.js';
+import type {ServerConfig} from '../config/env.js';
+import type {Database} from '../db/pool.js';
+import {ApiError} from '../http/errors.js';
+import {protectOrigin} from '../middleware/security.js';
+import {readSessionDigest} from '../services/sessions.js';
+import {MessageReview} from '../services/message-review.js';
+import {SequenceReports} from '../services/sequence-reports.js';
+import {LeadRouting} from '../services/lead-routing.js';
+import {ProspectJourney} from '../services/prospect-journey.js';
+import {FieldWork} from '../services/field-work.js';
+const parse=<T>(s:z.ZodType<T>,v:unknown)=>{const result=s.safeParse(v);if(!result.success)throw new ApiError(400,'INVALID_INPUT','Check the supplied fields.');return result.data;};
+const id=(v:unknown)=>parse(z.uuid(),v),body=<T>(r:Request,s:z.ZodType<T>)=>{if(!r.is('application/json'))throw new ApiError(415,'JSON_REQUIRED','Send application/json.');return parse(s,r.body);};
+export function createWorkflowsRouter(config:ServerConfig,db:Database,requireUser:RequestHandler){
+ const r=Router(),review=new MessageReview(db,config),reports=new SequenceReports(db,config),routing=new LeadRouting(db,config),journey=new ProspectJourney(db,config),field=new FieldWork(db,config);
+ const a=(s:Response)=>s.locals.user as AuthUser,d=(q:Request)=>{const digest=readSessionDigest(q,config);if(!digest)throw new ApiError(401,'AUTH_REQUIRED','Sign in.');return digest;},q=(r:Request)=>parse(productivityQuery,r.query);
+ r.use(requireUser,(req,res,next)=>{res.setHeader('Cache-Control','no-store, private');res.setHeader('Referrer-Policy','no-referrer');if(!['GET','HEAD','OPTIONS'].includes(req.method))return protectOrigin(config)(req,res,next);next();});
+ r.get('/review',async(req,res)=>res.json(await review.queue(a(res),d(req),q(req))));
+ r.post('/review/preview',async(req,res)=>res.json(await review.preview(a(res),d(req),body(req,S.reviewPreviewSchema))));
+ r.post('/review/approve',async(req,res)=>res.json(await review.approve(a(res),d(req),body(req,S.reviewApproveSchema))));
+ r.post('/review/skip',async(req,res)=>res.json(await review.skip(a(res),d(req),body(req,S.reviewSkipSchema))));
+ r.get('/sequences/:id/report',async(req,res)=>res.json(await reports.report(a(res),d(req),id(req.params.id),q(req))));
+ r.get('/routing/policy/:id',async(req,res)=>res.json(await routing.policy(a(res),d(req),id(req.params.id))));
+ r.post('/routing/policy',async(req,res)=>res.json(await routing.configure(a(res),d(req),body(req,S.leadRoutingSchema))));
+ r.post('/routing/preview',async(req,res)=>res.json(await routing.preview(a(res),d(req),body(req,S.routingPreviewSchema))));
+ r.post('/routing/apply',async(req,res)=>res.json(await routing.apply(a(res),d(req),body(req,S.routingApplySchema))));
+ r.get('/routing/history/:id',async(req,res)=>res.json(await routing.assignmentHistory(a(res),d(req),id(req.params.id))));
+ r.post('/journeys',async(req,res)=>res.status(201).json(await journey.prepare(a(res),d(req),body(req,S.journeyPrepareSchema))));
+ r.get('/field',async(req,res)=>res.json(await field.directory(a(res),d(req),q(req))));
+ r.post('/field/tours/:id',async(req,res)=>res.json(await field.saveNote(a(res),d(req),id(req.params.id),body(req,S.fieldNoteSchema))));
+ return r;
+}

@@ -1,3 +1,4 @@
+import {FollowupSequences} from './services/followup-sequences.js';
 ﻿import { FollowupAutomation,startFollowupAutomation } from './services/followup-automation.js';
 import type { Server } from 'node:http';
 import { createApp } from './app.js';
@@ -13,6 +14,7 @@ async function main(): Promise<void> {
   const database = new Database(config);
   const app = createApp(config, database);
   let server: Server;
+  let stopSequences: (() => Promise<void>) | undefined;
   let stopFollowups: (() => Promise<void>) | undefined;
   let stopReminders: (() => Promise<void>) | undefined;
   let stopImports: (() => Promise<void>) | undefined;
@@ -20,6 +22,7 @@ async function main(): Promise<void> {
   let stopConnectors: (() => Promise<void>) | undefined;
   try {
     server = app.listen(config.port, config.production ? '0.0.0.0' : '127.0.0.1', () => {
+      stopSequences = startFollowupAutomation(new FollowupSequences(database,config));
       stopFollowups = startFollowupAutomation(new FollowupAutomation(database,config));
       stopReminders = startTaskReminderWorker(database);
       stopImports = startImportWorker(database);
@@ -34,7 +37,7 @@ async function main(): Promise<void> {
   }
   server.on('error', () => {
     console.error('Ootla could not listen on PORT. Check that the port is available.');
-    void Promise.all([stopFollowups?.(),stopReminders?.(),stopImports?.(),stopConnectors?.(),stopGoogleCalendar?.()]).finally(() => database.close()).finally(() => { process.exitCode = 1; });
+    void Promise.all([stopSequences?.(),stopFollowups?.(),stopReminders?.(),stopImports?.(),stopConnectors?.(),stopGoogleCalendar?.()]).finally(() => database.close()).finally(() => { process.exitCode = 1; });
   });
   let closing = false;
   const shutdown = () => {
@@ -47,7 +50,7 @@ async function main(): Promise<void> {
     }, 10_000);
     deadline.unref();
     server.close(() => {
-      void Promise.all([stopFollowups?.(),stopReminders?.(),stopImports?.(),stopConnectors?.(),stopGoogleCalendar?.()]).then(() => database.close()).then(() => {
+      void Promise.all([stopSequences?.(),stopFollowups?.(),stopReminders?.(),stopImports?.(),stopConnectors?.(),stopGoogleCalendar?.()]).then(() => database.close()).then(() => {
         clearTimeout(deadline);
         process.exitCode = 0;
       }).catch(() => {

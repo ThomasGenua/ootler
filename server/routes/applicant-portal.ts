@@ -1,3 +1,6 @@
+import {ProspectJourney} from '../services/prospect-journey.js';
+import {shortlistResponseSchema} from '../../shared/productivity-contracts.js';
+import {publicCalendarReadSchema,publicCalendarBookSchema,publicCalendarManageSchema} from '../../shared/calendar-contracts.js';
 import {previewDocument} from '../http/document-preview.js';
 import { Router, raw, type Request, type RequestHandler, type Response } from 'express';
 import { z } from 'zod';
@@ -88,6 +91,13 @@ export function createApplicantPortalRouter(config: ServerConfig, database: Data
         response.locals.applicant = current;
         next();
     });
+    const journey=new ProspectJourney(database,config);
+    router.get('/journeys',async(req,res)=>{noQuery(req);res.json(await journey.directoryForApplicant(user(res)));});
+    router.get('/journeys/:id',async(req,res)=>{noQuery(req);res.json(await journey.read(user(res),id(req.params.id)));});
+    router.post('/journeys/:id/preferences',async(req,res)=>res.json(await journey.preferences(user(res),id(req.params.id),body(req,shortlistResponseSchema))));
+    router.post('/journeys/:id/availability',async(req,res)=>res.json(await journey.availability(user(res),id(req.params.id),body(req,publicCalendarReadSchema.omit({token:true})))));
+    router.post('/journeys/:id/book',async(req,res)=>res.json(await journey.book(user(res),id(req.params.id),body(req,publicCalendarBookSchema.omit({token:true})))));
+    router.post('/journeys/:id/manage',async(req,res)=>{const input=body(req,z.object({requestKey:z.uuid(),version:z.number().int().positive(),action:z.enum(['reschedule','cancel']),startsAt:z.iso.datetime({offset:true}).optional(),slotKey:z.string().regex(/^[a-f0-9]{64}$/).optional()}).strict());parse(publicCalendarManageSchema,{...input,token:'0'.repeat(64)});res.json(await journey.manage(user(res),id(req.params.id),input));});
     router.get('/applications', async (request, response) => {
         noQuery(request);
         response.json(await service.list(user(response)));

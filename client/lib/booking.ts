@@ -2,10 +2,12 @@ import {api,errorMessage} from './api';
 import {escapeHtml as e} from './ui';
 import {viewingTime,calendarDay,shiftCalendarDate} from './calendar-time';
 import type {PublicCalendarInvitation} from '../../shared/calendar-contracts';
-export function initializeBooking(signal:AbortSignal):void{
- const host=document.querySelector<HTMLElement>('[data-booking-content]');if(!host)return;
- const token=new URLSearchParams(location.hash.slice(1)).get('token')??'';
- history.replaceState(history.state,'',location.pathname+location.search);
+export function initializeBooking(signal:AbortSignal,options?:{host:HTMLElement;apiPrefix:string}):void{
+ const host=options?.host??document.querySelector<HTMLElement>('[data-booking-content]');if(!host)return;
+ const token=options?'0'.repeat(64):new URLSearchParams(location.hash.slice(1)).get('token')??'';
+ const payload=(value:Record<string,unknown>)=>{if(options)delete value.token;return JSON.stringify(value);};
+ const prefix=options?.apiPrefix??'/api/public/calendar';
+ if(!options)history.replaceState(history.state,'',location.pathname+location.search);
  if(!/^[a-f0-9]{64}$/.test(token)){host.innerHTML='<h2>Booking link needed</h2><p>Open the private booking link shared by your leasing team. If this page was refreshed, reopen that original link.</p>';return;}
  let current:PublicCalendarInvitation|null=null,date:string|undefined,page=1,managing=false,pendingPayload='',requestKey=crypto.randomUUID(),loading=false;
  const key=(body:unknown)=>{const fingerprint=JSON.stringify(body);if(fingerprint!==pendingPayload){pendingPayload=fingerprint;requestKey=crypto.randomUUID();}return requestKey;};
@@ -16,7 +18,7 @@ export function initializeBooking(signal:AbortSignal):void{
   if(booking&&!booking.canManage){managing=false;render(data);return;}
   host.innerHTML+='<form data-public-booking><fieldset class="vc-slots"><legend>'+(booking?'Replacement viewing times':'Available viewing times')+'</legend><div class="vc-slot-options">'+data.slots.items.map((slot,i)=>'<label class="vc-slot-option"><input type="radio" name="slot" value="'+i+'" required/><span>'+e(viewingTime(slot.startsAt,slot.endsAt,data.timeZone))+'</span></label>').join('')+'</div></fieldset>'+(data.slots.items.length?'<button type="submit" class="vc-button vc-primary">'+(booking?'Confirm new time':'Confirm viewing')+'</button>':'<p>No available times in this period. Try another week or contact your leasing team.</p>')+'</form><p class="vc-error" role="alert" data-booking-error></p><div class="vc-actions">'+(data.slots.page>1?'<button class="vc-button" type="button" data-booking-page="previous">Previous times</button>':'')+(data.slots.page<data.slots.totalPages?'<button class="vc-button" type="button" data-booking-page="next">More times</button>':'')+'<button class="vc-button" type="button" data-booking-page="earlier">Earlier week</button><button class="vc-button" type="button" data-booking-page="week">Following week</button>'+(booking?'<button class="vc-button" type="button" data-booking-back>Keep current time</button>':'')+'</div><p class="vc-hint">Availability is checked again when you confirm. An existing booking stays in place until its replacement is confirmed.</p>';
  };
- const load=async()=>{if(loading)return;loading=true;try{const data=await api<PublicCalendarInvitation>('/api/public/calendar/availability',{method:'POST',body:JSON.stringify({token,date,days:7,page,pageSize:25,manage:managing}),signal});if(!signal.aborted)render(data);}catch(issue){if(!signal.aborted){const error=host.querySelector('[data-booking-error]');if(error)error.textContent=errorMessage(issue);else host.innerHTML='<h2>Booking unavailable</h2><p>'+e(errorMessage(issue))+'</p><p>Contact the team who shared your link. For a refreshed page, reopen the original private link.</p>';}}finally{loading=false;}};
+ const load=async()=>{if(loading)return;loading=true;try{const data=await api<PublicCalendarInvitation>(prefix+'/availability',{method:'POST',body:payload({token,date,days:7,page,pageSize:25,manage:managing}),signal});if(!signal.aborted)render(data);}catch(issue){if(!signal.aborted){const error=host.querySelector('[data-booking-error]');if(error)error.textContent=errorMessage(issue);else host.innerHTML='<h2>Booking unavailable</h2><p>'+e(errorMessage(issue))+'</p><p>Contact the team who shared your link. For a refreshed page, reopen the original private link.</p>';}}finally{loading=false;}};
  host.addEventListener('click',event=>{
   const button=event.target instanceof Element?event.target.closest<HTMLButtonElement>('button[type=button]'):null;if(!button||!current||loading)return;
   if(button.hasAttribute('data-booking-change')){managing=true;page=1;date=undefined;}
@@ -30,7 +32,7 @@ export function initializeBooking(signal:AbortSignal):void{
   try{const cancel=form.hasAttribute('data-booking-cancel'),slot=current.slots.items[Number(new FormData(form).get('slot'))];let body:Record<string,unknown>;
    if(cancel)body={token,version:current.booking!.version,action:'cancel'};
    else{if(!slot)throw Error('Choose an available time.');body={token,startsAt:slot.startsAt,slotKey:slot.slotKey,...(current.booking?{version:current.booking.version,action:'reschedule'}:{})};}
-   await api('/api/public/calendar/'+(current.booking?'manage':'book'),{method:'POST',body:JSON.stringify({...body,requestKey:key(body)}),signal});managing=false;await load();
+   await api(prefix+'/'+(current.booking?'manage':'book'),{method:'POST',body:payload({...body,requestKey:key(body)}),signal});managing=false;await load();
   }catch(issue){if(!signal.aborted){error.textContent=errorMessage(issue);submit.disabled=false;}}
  },{signal});void load();
 }

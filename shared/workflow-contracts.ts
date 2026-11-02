@@ -1,0 +1,12 @@
+import {z} from 'zod';
+const id=z.uuid(),text=(max:number)=>z.string().trim().max(max).refine(v=>!/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(v));
+export const reviewItems=z.array(z.object({conversationId:id,messageId:id,version:z.number().int().positive()}).strict()).min(1).max(20).refine(v=>new Set(v.map(x=>x.messageId)).size===v.length);
+export const reviewPreviewSchema=z.object({items:reviewItems}).strict();
+export const reviewApproveSchema=z.object({token:z.string().max(30000),messageIds:z.array(id).min(1).max(20).refine(v=>new Set(v).size===v.length),confirmed:z.literal(true)}).strict();
+export const reviewSkipSchema=z.object({conversationId:id,messageId:id,version:z.number().int().positive()}).strict();
+export const routingWindow=z.object({weekday:z.number().int().min(0).max(6),start:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/),end:z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/)}).strict().refine(v=>v.start<v.end);
+export const leadRoutingSchema=z.object({propertyId:id,version:z.number().int().nonnegative(),enabled:z.boolean(),timeZone:z.string().max(80).refine(v=>{try{new Intl.DateTimeFormat('en',{timeZone:v});return true;}catch{return false;}}),members:z.array(z.object({membershipId:id,enabled:z.boolean(),capacity:z.number().int().min(1).max(1000),awayUntil:z.iso.datetime({offset:true}).nullable(),windows:z.array(routingWindow).min(1).max(21)}).strict()).max(50).refine(v=>new Set(v.map(x=>x.membershipId)).size===v.length),confirmed:z.literal(true)}).strict();
+export const routingPreviewSchema=z.object({leadIds:z.array(id).min(1).max(50).refine(v=>new Set(v).size===v.length)}).strict();
+export const routingApplySchema=z.object({requestKey:id,token:z.string().max(30000),confirmed:z.literal(true)}).strict();
+export const fieldNoteSchema=z.object({requestKey:id,version:z.number().int().nonnegative(),notes:text(4000)}).strict();
+export const journeyPrepareSchema=z.object({requestKey:id,leadId:id,unitIds:z.array(id).max(8).refine(v=>new Set(v).size===v.length),booking:z.object({propertyId:id,ownerMembershipId:id,unitId:id.nullable()}).strict().nullable(),confirmed:z.literal(true)}).strict();

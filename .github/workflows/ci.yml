@@ -54,6 +54,8 @@ jobs:
         run: npm run check:browser
       - name: Leasing productivity, reviewed actions, private shortlists and file scanning
         run: npm run check:productivity
+      - name: Batch review, prospect journeys, routing, reports and mobile recovery
+        run: npm run check:connected-workflows
       - name: Stop the owned test cluster
         if: always()
         run: npm run db:local:stop
