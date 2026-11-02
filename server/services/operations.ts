@@ -42,7 +42,7 @@ export class Operations {
  async saveKnowledge(user:AuthUser,digest:string,id:string|null,input:z.infer<typeof knowledgeSchema>){return this.staff(user,digest,async(c,a)=>{
   requireAdmin(a);await propertyAccess(c,a,input.propertyId);
   const values=[a.organization.id,input.propertyId,input.title,input.body,input.sourceUrl,input.published,a.id];
-  const row=id?(await c.query('UPDATE property_knowledge SET title=$3,body=$4,source_url=$5,published=$6,updated_by=$7,updated_at=now(),version=version+1 WHERE organization_id=$1 AND property_id=$2 AND id=$8 AND version=$9 RETURNING *',[...values,id,input.version])).rows[0]:(await c.query('INSERT INTO property_knowledge(organization_id,property_id,title,body,source_url,published,updated_by) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *',values)).rows[0];if(!row)throw stale();
+  const row=id?(await c.query('UPDATE property_knowledge SET title=$3,body=$4,source_url=$5,published=$6,public_answer=false,updated_by=$7,updated_at=now(),version=version+1 WHERE organization_id=$1 AND property_id=$2 AND id=$8 AND version=$9 RETURNING *',[...values,id,input.version])).rows[0]:(await c.query('INSERT INTO property_knowledge(organization_id,property_id,title,body,source_url,published,updated_by) VALUES($1,$2,$3,$4,$5,$6,$7) RETURNING *',values)).rows[0];if(!row)throw stale();
   await operationEvent(c,a.organization.id,input.propertyId,null,a.id,'knowledge.updated','Property knowledge '+(input.published?'published.':'saved as a draft.'));return row;
  });}
  async saveTemplate(user:AuthUser,digest:string,id:string|null,input:z.infer<typeof templateSchema>){return this.staff(user,digest,async(c,a)=>{

@@ -1,3 +1,4 @@
+import {createAiWorkflowRouter,createConciergeRouter,createDocumentAssistantRouter} from './routes/ai-workflows.js';
 import {createWorkflowsRouter} from './routes/workflows.js';
 import {createProductivityRouter,createShortlistRouter} from './routes/productivity.js';
 import {createPropertyCollaborationRouter,createVendorWorkspaceRouter,createResidentDocumentsRouter} from './routes/property-collaboration.js';
@@ -42,7 +43,7 @@ import { adminSummaryQuerySchema } from '../shared/admin-summary-contracts.js';
 import { loadAdminPageSummary } from './services/admin-summary.js';
 
 const frontendRoutes = new Set([
-  '/applicant/journey','/shortlist','/admin/review-queue','/admin/lead-routing','/admin/sequence-reports','/admin/prospect-journeys','/admin/field','/admin/tour-followup','/admin/shortlists','/admin/playbooks','/admin/sequences','/admin/workload','/admin/conversion',
+  '/admin/knowledge-imports','/admin/briefing','/admin/ai-usage','/applicant/journey','/shortlist','/admin/review-queue','/admin/lead-routing','/admin/sequence-reports','/admin/prospect-journeys','/admin/field','/admin/tour-followup','/admin/shortlists','/admin/playbooks','/admin/sequences','/admin/workload','/admin/conversion',
   '/vendor','/admin/vendor-work','/admin/inspections','/admin/notifications','/admin/resident-documents','/admin/property-insights','/inquire', '/resident', '/admin/maintenance','/admin/renewals','/admin/vacancies','/admin/duplicates','/admin/response-targets','/admin/attention', '/admin/intake', '/admin/inbox', '/admin/automations', '/admin/residents', '/admin/workspace', '/admin/knowledge', '/admin/reports',
   '/staff/access', '/admin/team', '/admin/onboarding',
   '/applicant', '/applicant/login', '/applicant/invite', '/payment-demo', '/book', '/', '/platform', '/ai-workflows', '/workflows/leasing', '/workflows/resident-support', '/integrations', '/contact', '/privacy', '/admin/login', '/admin',
@@ -95,6 +96,7 @@ export function createApp(config: ServerConfig, database: Database, options: { c
   app.use('/api/screening', createScreeningDemoCallbackRouter(config, database));
   app.use('/api/communications',createCommunicationWebhooks(config,database,options.communicationFetch));
   app.use(['/api/operations','/api/public/intake','/api/resident'],express.json({ limit: '64kb', strict: true }));
+  app.use('/api/ai-workflows',express.json({limit:'128kb',strict:true}));
   app.use(express.json({ limit: '16kb', strict: true }));
 
   app.get('/api/live', (_request, response) => response.json({ status: 'ok' }));
@@ -143,6 +145,10 @@ export function createApp(config: ServerConfig, database: Database, options: { c
     response.locals.user = user;
     next();
   };
+
+  app.use('/api/ai-workflows',createAiWorkflowRouter(config,database,requireUser));
+  app.use('/api/public/concierge',createConciergeRouter(config,database));
+  app.use('/api/applicant-assistance',createDocumentAssistantRouter(config,database));
 
   app.get('/api/auth/me', requireUser, (_request, response) => {
     response.json({ user: response.locals.user as AuthUser });
