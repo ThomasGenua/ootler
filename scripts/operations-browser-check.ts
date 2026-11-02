@@ -1,12 +1,15 @@
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import {mkdir} from 'node:fs/promises';
-import {createServer} from 'vite';
+import {mkdir,access} from 'node:fs/promises';
+import {preview} from 'vite';
 import {chromium,expect} from '@playwright/test';
 import type {ServerConfig} from '../server/config/env.js';
 export async function checkOperationsBrowser(input:{base:string;cookie:string;analyst:string;applicant:string;config:ServerConfig;propertyId:string;formId:string;leadId:string;conversationId:string;requestId:string;propertyRecords:import('./property-operations-browser-check.js').PropertyBrowserRecords}){
- const root=path.resolve(import.meta.dirname,'..'),web=await createServer({configFile:false,root:path.join(root,'client'),publicDir:path.join(root,'public'),server:{host:'127.0.0.1',port:0,proxy:{'/api':input.base}},logLevel:'error'});
- await web.listen();const address=web.httpServer!.address();assert(address&&typeof address!=='string');const base='http://127.0.0.1:'+address.port,previous=input.config.appUrl;(input.config as {appUrl:string}).appUrl=base;
+ const root=path.resolve(import.meta.dirname,'..');
+ // Exercise the built release assets without a development module graph/HMR across hundreds of navigations.
+ await access(path.join(root,'dist/client/app-shell.html')).catch(()=>{throw Error('Run npm run build before the operations browser check.');});
+ const web=await preview({configFile:false,root:path.join(root,'client'),build:{outDir:path.join(root,'dist/client')},appType:'mpa',preview:{host:'127.0.0.1',port:0,proxy:{'/api':input.base}},plugins:[{name:'isolated-browser-shell',configurePreviewServer(server){server.middlewares.use((req,_res,next)=>{if(req.method==='GET'&&req.headers.accept?.includes('text/html')&&!new URL(req.url??'/', 'http://localhost').pathname.startsWith('/api/'))req.url='/app-shell.html';next();});}}],logLevel:'error'});
+ const address=web.httpServer.address();assert(address&&typeof address!=='string');const base='http://127.0.0.1:'+address.port,previous=input.config.appUrl;(input.config as {appUrl:string}).appUrl=base;
  const browser=await chromium.launch({channel:process.env.OOTLA_BROWSER_CHANNEL||'chrome',headless:true});
  try{
   const errors:string[]=[],context=await browser.newContext({reducedMotion:'reduce'});
