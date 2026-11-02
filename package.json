@@ -84,7 +84,9 @@
     "check:productivity": "tsx scripts/check-productivity.ts",
     "sequences:process": "tsx scripts/process-followup-sequences.ts",
     "check:connected-workflows": "tsx scripts/check-connected-workflows.ts",
-    "release:check": "tsx scripts/release-check.ts"
+    "release:check": "tsx scripts/release-check.ts",
+    "check:ai-workflows": "tsx scripts/check-ai-workflows.ts",
+    "ai:evaluate": "tsx scripts/evaluate-ai-workflows.ts"
   },
   "dependencies": {
     "@fontsource/inter": "5.3.0",
